@@ -322,3 +322,253 @@ public class Main {
 * 오늘 배운 내용들을 큰 틀에서는 알고 있었지만, 조금 더 디테일하게 다형성을 사용한 경우, 아닌 경우를 비교하며 어떤 부분에서 이점을 가지는지 더욱 자세하게 알 수 있었음.
 * 배운 내용들을 장황하게 적는 것보다 조금 더 컴팩트하게 적는 연습을 해야겠다고 생각.
 * __다형성의 핵심!!! -> 서로 다른 객체들을 한 번에 묶어서 활용할 수 있다!__
+
+## 3일차 - 예외
+### 1. Error VS Exception
+* __Error__ : 시스템이 종료되어야 할 상황같이 ```수습할 수 없는 심각한 문제```를 의미. 개발자가 미리 예측하여 방지할 수 없음.
+* __Exception__ : ```개발자가 구현한 로직에서 발생한 실수, 혹은 사용자의 영향에 의해 발생```. 개발자가 미리 예측하여 방지하는 __예외 처리(Exception Handle)__ 를 해야함.
+
+### 2. 예외가 발생하는 이유
+* __개발자가 설계한 대로(실수, 사용자의 영향) 실행되지 않았기 때문.__
+```java
+public class ExceptionApp {
+	public static void main(String[] args) {
+		System.out.println(1);
+		System.out.println(2/0);
+		System.out.println(3); 
+	}
+}
+```
+* 자바는 숫자를 0으로 나누는 경우를 예외로 지정.
+* 예외가 발생한 지점으로부터 그 뒤의 코드는 실행되지 않음.
+
+### 3. 예외 처리
+* 숫자를 입력받아 계산하는 코드의 경우 사용자가 0을 입력하면 예외가 발생하는 불안정한 코드.
+* ```try catch 문```을 이용해서 ```예외 처리```
+```java
+public class ExceptionHandelApp {
+    public static void main(String[] args) {
+        System.out.println(1);
+        try{
+            System.out.println(2/0); // Run-Time Exception -> ArithmeticException
+        }
+        catch(ArithmeticException e){
+            System.out.println("Arithmetic Exception");
+        }
+        System.out.println(3);
+    }
+}
+```
+```
+실행결과
+
+1
+Arithmetic Exception
+3
+```
+* 이런 식으로 코드를 수정해주면 예외가 발생할 경우 처리 가능.
+<hr>
+
+* 좀 더 복잡한 예외 상황을 가정해보자.
+```java
+public class ExceptionApp2 {
+    public static void main(String[] args) {
+        System.out.println(1);
+        int[] scores = {10, 20, 30};
+        System.out.println(2);
+        System.out.println(scores[3]); //ArrayIndexOutOfBoundsException
+        System.out.println(3);
+        System.out.println(2/0); //ArithmeticException
+        System.out.println(4);
+        System.out.println(5);
+    }
+}
+```
+* 이 경우 ArrayIndexOutOfBoundsException, ArithmeticException 동시에 발생할 수 있음.
+* 이 경우에는 어떻게 처리해야 할까?
+```java
+public class ExceptionHandelApp2 {
+    public static void main(String[] args) {
+        System.out.println(1);
+        int[] scores = {10, 20, 30};
+        try{
+            System.out.println(2);
+            System.out.println(scores[3]); //ArrayIndexOutOfBoundsException
+            //여기까지 실행 후, catch (Exception e)문으로 이동.
+            System.out.println(3);
+            System.out.println(2/0); //ArithmeticException
+            System.out.println(4);
+        } catch (ArithmeticException e) {
+            System.out.println("ArithmeticException");
+        } catch (ArrayIndexOutOfBoundsException e) {
+            System.out.println("Exception");
+        }
+        System.out.println(5);
+    }
+}
+```
+* ```ArrayIndexOutOfBoundsException```의 경우 ```catch (ArrayIndexOutOfBoundsException e)```문을 실행 후 try문 실행을 멈추고 다음 코드를 실행.
+* ```ArithmeticException```의 경우 ```catch (ArithmeticException e)```문을 실행 후 try문 실행을 멈추고 다음 코드를 실행.
+
+### 4. 예외 처리의 우선 순위
+* 예외도 클래스(상속)으로 구현되어 있음.
+
+<img src="https://flylib.com/books/2/254/1/html/2/images/13fig03.jpg">
+
+* 위의 그림에 따라 ```ArithmeticException```은 ```RuntimeException```을 상속받고,
+* ```RuntimeException```은 ```Exception```을 상속받는다.
+* 이를 활용하여 예외의 처리도 포괄적으로 처리할 수 있다.
+```java
+public class ExceptionHandleApp3 {
+    public static void main(String[] args) {
+        System.out.println(1);
+        int[] scores = {10, 20, 30};
+        try{
+            System.out.println(2);
+            System.out.println(scores[3]); //ArrayIndexOutOfBoundsException
+            System.out.println(3);
+            System.out.println(2/0); //ArithmeticException
+            System.out.println(4);
+        } catch (ArithmeticException e) {
+            System.out.println("ArithmeticException");
+        } catch (Exception e) {
+            System.out.println("Exception");
+        }
+        System.out.println(5);
+    }
+}
+```
+* 이 경우 ```ArrayIndexOutOfBoundsException```이 발생하면 해당 예외는 ```Exception```이 포괄적으로 포함하고 있기에, ```catch (Exception e)```에서 처리 가능.
+* ```ArithmeticException```이 발생하면 catch구문을 위에서 부터 내려가며 처음 걸리는 ```catch (ArithmeticException e)```에서 처리.
+
+### 5. 변수 e의 역할
+* ```catch의 변수 e```는 예외가 발생한 ```원인, 발생한 지점 등```과 같은 정보들이 포함.
+```java
+public class ExceptionHandleApp2 {
+    public static void main(String[] args) {
+        System.out.println(1);
+        int[] scores = {10, 20, 30};
+        try {
+            System.out.println(2);
+            System.out.println(3);
+            System.out.println(2 / 0); //ArithmeticException
+            System.out.println(4);
+        } catch (ArithmeticException e) {
+            System.out.println("ArithmeticException" + e.getMessage());
+            e.printStackTrace();
+        }
+        System.out.println(5);
+    }
+}
+```
+```
+실행결과
+
+1
+2
+3
+ArithmeticException/ by zero
+5
+java.lang.ArithmeticException: / by zero
+	at day3_exception.exception.ExceptionHandleApp2.main(ExceptionHandleApp2.java:10)
+```
+* ``` e.getMessage()```를 통해```/ by zero``` 다음과 같이 예외의 디테일한 문자열을 받을 수도 있고
+* ```e.printStackTrace();```를 통해 ```java.lang.ArithmeticException: / by zero
+  at day3_exception.exception.ExceptionHandleApp2.main(ExceptionHandleApp2.java:10)``` 와 같은 에러 메세지도 출력할 수 있음.
+
+### 6. checked Exception VS unchecked Exception
+* 위의 예제와 같은 코드를 작성했을 때, 컴파일 되어 실행은 가능했다. 이러한 예외를 ```unchecked Exception```이라고 한다.
+* ```unchecked Exception```은 ```Runtime Exception```을 상속받은 예외들이다.
+* 반대로 예외 처리(try catch 등)과 같은 처리를 하지 않으면 컴파일 자체가 안되는 예외가 있는데, 이를 ```checked Exception```이라고 한다.
+* ```checked Exception```은 ```Runtime Exception```을 제외한 모든 에러와 예외들이다.
+```java
+public class CheckedException {
+    public static void main(String[] args) {
+        try{
+            FileWriter f = new FileWriter("data.txt");
+            f.write("hello");
+            f.close();
+        } catch(IOException e){
+            e.printStackTrace();
+        }
+    }
+}
+```
+* 위의 코드는 IOException(checked Exception)을 발생시키기 때문에, 예외처리를 반드시 해야 컴파일을 할 수 있다.
+
+### 7. Resource와 finally문
+* __resource(자원)__ : 프로그램 외부에 존재하는 접근해서 작업해야 하는 데이터들(파일, 네트워크, DB 등)
+* 자원을 사용하기 위해선 자원을 붙들고 있어야 하고, 작업을 마무리 할 땐 붙들고 있는 자원을 놓아줘야 한다.
+* ```f.close()```가 위의 역할을 한다.
+* 하지만 6번의 예제코드처럼 작성하면 자원에 접근하여 처리하던 도중 문제가 발생하면 ```f.close()``` 가 수행되지 않고, 넘어가버리는 문제가 발생한다.
+* 이를 처리하기 위해 ```finally문```이 사용된다.
+```java
+public class Finally {
+    public static void main(String[] args) {
+        FileWriter f = null;
+        try{
+            f = new FileWriter("data.txt");
+            f.write("hello");
+        } catch(IOException e){
+            e.printStackTrace();
+        }
+        finally{
+            if(f != null){
+                try{
+                    f.close();
+                } catch(IOException e){
+                    e.printStackTrace();
+                }
+            }
+        }
+    }
+}
+```
+* 다음과 같이 작성하여, 자원에 접근 도중 문제가 발생하여도 자원을 놓아주는 코드를 작성할 수 있다.
+
+### 8. Try with Resource
+* 위의 코드는 아주 복잡한 코드 진행같아 보인다.
+* 그래서 Java SE 7부터 ```try-with-resource```를 지원한다.
+* 이는 사용하고자 하는 클래스(FileWriter)가 ```AutoClosable 인터페이스```를 상속한다면 사용할 수 있다.
+```java
+public class TryWithResource {
+    public static void main(String[] args) {
+        try(FileWriter f = new FileWriter("data.txt")){
+            f.write("hello");
+        } catch(IOException e){
+            e.printStackTrace();
+        }
+    }
+}
+```
+* try 문 괄호 안에 사용할 자원을 정의.
+* 세미콜론으로 구분하여 객체를 여러개 생성할 수도 있음.
+* 자동으로 자원을 닫아주기 때문에, __f.close()__ 와 같이 명시적으로 자원을 놓아줄 필요 없음.
+
+### 9. throw와 throws
+* ```throw Exception```을 사용하면 우리의 코드에서 직접 예외를 발생시킬 수 있다.
+```java
+public class Throw {
+    public static void main(String[] args) {
+        throw new RuntimeException("문제가 발생했음!"); // 여기서 예외 발생
+    }
+}
+```
+* 이런 식으로 우리의 코드에서 무조건적으로 예외를 발생시킬 수 있음.
+
+* ```throws```를 이용하면 ```try catch```처럼 직접 예외를 처리하지 않고, 발생한 예외를 누군가 처리해달라고 던질 수 있다.
+```java
+public class Throws {
+    public static void main(String[] args) throws IOException{
+        FileWriter f = new FileWriter("data.txt");
+        f.write("hello");
+        f.close();
+    }
+}
+```
+* 우리가 작성한 메소드에서 예외가 발생한 경우 ```throws```이용해서 예외 처리 다른 누군가에게 던질 수 있다.
+
+### 3일차 공부에서 느낀점/배운점
+* 알고리즘 문제 풀면서 IOException과 같은 예외를 본 적은 있어도, 정확한 정의나 어떤식으로 사용되는지 조금은 알 수 있었다.
+* 미니 프로젝트(키오스크 만들기)에서 따로 메서드를 만들어서 if-else문으로 직접 문제가 된 부분을 처리했는데,
+* 오늘 배운 예외, 예외처리로 조금 더 깔끔하게 문제를 처리할 수 있겠다고 생각했다.
