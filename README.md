@@ -630,3 +630,107 @@ public class Throws {
 * 추천받아서 처음 들어본 강의였는데, 처음부터 차근차근 설명해줘서 이해하기 쉬웠다.
 
 #### 4일차 출처 : <https://www.boostcourse.org/cs204/joinLectures/145114>
+
+## 5일차 - 자료구조를 위한 준비(제네릭 프로그래밍)
+### 1. Comparable 인터페이스
+* 만약 우리가 어떤 문자열 두개를 비교하고 싶다면 어떻게 하는가?
+### __override__
+```java
+public class Equals1 {
+    public static void main(String[] args) {
+        String one = "hello world!";
+        String two = "hello world!";
+        if(one.equals(two)){
+            System.out.println("they are the same");
+        }
+    }
+}
+```
+* 그럼 ```equals()```은 어디서 온 것일까?
+* ```Object 클래스```에서 온 것일까요? 
+* 만약 override 되어 있지 않다면
+```java
+    public static void main(String[] args) {
+    Object one = "hello world!";
+    Object two = "hello world!";
+    // 오버라이딩 되어 있지 않다고 가정.
+    if(one.equals(two)){
+        System.out.println("they are the same");
+    } else{
+        System.out.println("they are not the same");
+    }
+}
+```
+* 결과는 서로 같지 않다는 결과를 얻을 것이다. (Object의 equals는 메모리 주소를 비교)
+* ```Object 클래스```의 ```equals```를 사용하면 둘의 참조값이 같은지를 비교하기 때문이다.
+* 우리가 만든 클래스(예를 들어 ```Student```)간의 비교를 위해선 ```equals```를 ```override```해야한다. (우리가 만든 클래스는 모두 java의 ```Object```의 상속을 받음.)
+
+### __Comparable 클래스__
+* 우리는 두 개를 비교할 때, 같다는 것보다 작거나 큰 경우를 더 많이 필요로 한다.
+```java
+//Comparable<T> interface
+public int compareTo(T obj){
+    // a.compareTo(b);
+    if(a<b) return -1; // <0인 무언가
+    if(a==b) return 0;
+    if(a>b) return 1; // >0인 무언가
+}
+```
+```java
+if (((Comparable<T>)data).compareTo(obj)==0);
+```
+* 위와 같이 Comparable 인터페이스를 만들면 자료형에 알맞은 데이터가 들어와서 compareTo 함수를 통해 같은 자료형의 데이터를 비교할 수 있음.
+```java
+public boolean contains(E obj); // 연결리스트의 메서드
+```
+* 위의 코드를 활용하여 연결리스트의 contains 메서드를 구현할 수 있음.
+
+### 2. 제네릭 프로그래밍 
+* 여기 정렬 알고리즘을 만들었다고 가정해보자.
+```java 
+public class ss{
+    public int[] superSort(int[] array){
+        /// sort
+        reutnr array;
+    }
+}
+```
+* 이를 문자열에도 사용하고 싶으면 어떻게 할까요?
+* 문자열에 대해서도 다시 메서드를 만들어주면 됩니다.
+* 하지만 그렇게 하면 모든 객체 타입마다의 메서드를 만들어 줘야 하기 때문에 아주 비효율적입니다.
+* __그 문제를 해결하기 위해 우리는 ```제네릭 프로그래밍```을 합니다.__
+  * ```제네릭 프로그래밍의 목적```은 1가지 코드만 작성해서 이를 다른 자료형에서도 사용할 수 있도록 하는 것!
+
+### 3. Parameterized Types (매개변수화 타입)
+* 제네릭 프로그래밍을 구현하기 위한 방법으로 ```매개변수화 타입```을 사용할 수 있다. ```<>```안에 ```Type Parameter```를 넣어 컴파일 시에 구체적인 타입이 결정되도록 하는 것.
+
+```java
+// 클래스
+public class LinkedList
+public class LinkedLilst<E>
+
+// 함수
+public void addFirst(String S)
+public void addFirst(E obj)
+
+public String removeFirst()
+public E removeFirst()
+```
+* 다음과 같이 매개변수화 타입을 사용하기 위해선 아래와 같이 고쳐줘야 한다. 다만, 생성자의 경우 예외적으로 E를 사용하지 않는다.
+
+```java
+public class Node<E> {
+    E data;
+    Node<E> next;
+    public Node(E obj) {
+        data = obj;
+        next = null;
+    }
+}
+```
+* 다음은 매개변수화 타입을 이용해서 어떠한 자료형이든 담을 수 있는 제네릭 노드를 만드는 코드.
+
+### 5일차 공부를 하면서 느낀점/배운점
+* 제네릭 프로그래밍을 거의 처음 배우는 거라 조금은 어렵게 느껴졌다.
+* 본 강의에서는 자료구조를 배우기 위한 아주 기초적인 개념들만 짚고 넘어가니, 제네릭 프로그래밍에 대한 깊이있는 이해를 하기엔 부족했다.
+* 일단 자료구조 강의를 먼저 수강한 뒤, 제네릭 프로그래밍에 대해 공부를 더 하고 넘어가야할지 판단해야겠다.
