@@ -734,3 +734,134 @@ public class Node<E> {
 * 제네릭 프로그래밍을 거의 처음 배우는 거라 조금은 어렵게 느껴졌다.
 * 본 강의에서는 자료구조를 배우기 위한 아주 기초적인 개념들만 짚고 넘어가니, 제네릭 프로그래밍에 대한 깊이있는 이해를 하기엔 부족했다.
 * 일단 자료구조 강의를 먼저 수강한 뒤, 제네릭 프로그래밍에 대해 공부를 더 하고 넘어가야할지 판단해야겠다.
+
+## 6일차 - 연결리스트
+### 1. 연결리스트 정의
+<img src="https://miro.medium.com/v2/resize:fit:1080/0*chiZd2LxZXoXWL52.jpg">
+
+출처: https://harsh05.medium.com/linked-lists-data-structure-in-c-ef52fcee0e09 
+* __포인터를 이용해 여러개 노드를 연결하는 자료구조__
+
+    ### 배열과의 차이점 
+    * 배열은 ```크기와 요소의 개수의 차이로 인한 불필요한 메모리 낭비```가 발생할 수 있는 반면
+    * 연결리스트는 ```항상 맞는 크기로 만들어지도록 설계```
+
+    ### 노드와 크기
+  ```java
+    public class LinkedList<E> { //implements List<E>
+    // 노드 정의
+    class Node<E> {
+    E data;
+    Node<E> next;
+    
+            public Node(E data) {
+                this.data = data;
+                next = null;
+            }
+        }
+    
+        private Node<E> head;
+        // 노드 개수 세는 변수
+        private int currentSize;
+        // 기본 연결 리스트
+        public LinkedList(){
+            head = null;
+            currentSize = 0;
+        }
+        // ...
+    }
+  ```
+    * 위 코드는 __연결리스트 내부 클래스에서 노드를 정의__ 하고, __연결리스트의 필드를 정의__ 한 내용.
+    * 노드에는 ```다음 노드를 가리키는 포인터 변수 next```와 ```data```를 가진다.
+    * 노드는 내부 클래스로 정의되어, 연결리스트가 아닌 외부에서 접근하지 못 하도록 정의.
+    * ```head```와 ```currentSize``` 또한 private으로 정의되어 외부에서 접근하지 못 하도록 정의.
+  
+    ### 연결리스트에서 노드의 개수를 효율적으로 세기 위한 방법
+    * 노드의 개수를 직접 세는 방법(```θ(n)```)이 아닌, __```currentSize```변수를 만들어 노드의 개수를 센다.(```θ(1)```)___
+    
+### 2. 자료구조의 경계 조건
+* 자료구조에서 아래의 경계 조건에서 문제가 생기진 않는지 확인 필요.
+  1. 자료 구조가 비어있는 경우
+  2. 자료 구조에 단 하나의 요소가 들어있는 경우
+  3. 자료 구조의 첫 번째 요소를 제거하거나 추가하는 경우
+  4. 자료 구조의 마지막 요소를 제거하거나 추가하는 경우
+  5. 자료 구조의 중간 부분을 처리하는 경우
+
+### 3. addFirst 메서드
+* 새로운 노드를 연결리스트 앞부분에 추가하는 과정
+  1. 새로운 node 생성 
+  2. 새로운 node의 next가 현재 head를 가리키도록 한다.
+  3. head가 새로운 node를 가리키도록 한다.
+
+* 위를 코드로 작성하면
+    ```java
+    public void addFirst (E obj){
+        Node<E> node = new Node<>(obj);
+        node.next = head;
+        head = node;
+    }
+    ```
+
+* 만약 2,3 번이 바뀐다면 어떻게 될까?
+  - head를 새로운 노드를 먼저 가리킨다면
+  - 원래 ```첫번째 노드를 가리키는 포인터 변수가 없어서 가비지 컬렉션이 작동```한다.
+
+* 경계 조건
+  * 비어있는 경우에도 문제 발생 x
+  * 뒤에 요소가 존재하는 경우도 문제 발생 X
+
+* ```시간 복잡도 = 1```
+
+### 4. addLast
+* 새로운 노드를 연결리스트 뒷부분에 추가하기 위해선 ```임시 포인터```를 사용한다.(head부터 시작해서 next를 사용하여 마지막 노드를 가기 위해선 너무 많은 next가 필요하기 때문)
+* 기본적인 코드
+    ```java
+    public void addLast (E obj){
+        Node<E> node = new Node<>(obj);
+        Node<E> temp = head;
+        while(temp.next != null){
+            temp = temp.next;
+        }
+        temp.next = node;
+    }
+    ```
+    * 마지막 노드만이 next포인터가 null을 가리키기 때문에 위의 코드처럼 작성하면 됨.
+  
+* __문제1. 경계 조건__
+    * 아무것도 존재하지 않는 경우, temp = head이고, head는 null을 가리키고 있기 때문에 ```NullPointerException```에러가 발생.
+    * 따라서 ```head == null```일 경우, __addFirst 메서드처럼 노드를 추가__ 한다.
+    
+  ```java
+    public void addLast (E obj){
+        Node<E> node = new Node<>(obj);
+        Node<E> temp = head;
+        if(head==null){
+            head = node;
+            currentSize++;
+            return;
+        }
+        while(temp.next != null){
+            temp = temp.next;
+        }
+        temp.next = node;
+        currentSize++;
+    }
+  ```
+
+* __문제2. 시간복잡도__
+    * temp 변수가 마지막 노드까지 도달해야 하기 때문에 위의 코드는 시간복잡도가 ```O(n)```이 된다.
+    * 하지만 애초에 ```tail 포인터 변수```가 마지막 노드를 가리키고 있으면 모든 노드를 거칠 필요가 없어져 시간 복잡도를 ```O(1)```로 만들 수 있다.
+    ```java
+    public void newAddLast (E obj){
+        Node<E> node = new Node<>(obj);
+        Node<E> temp = head;
+        if(head==null){
+            tail = head = node;
+            currentSize++;
+            return;
+        }
+        tail.next = node;
+        tail = node;
+        currentSize++;
+    }
+   ```
