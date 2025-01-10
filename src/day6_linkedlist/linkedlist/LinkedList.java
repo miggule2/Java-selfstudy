@@ -58,6 +58,69 @@ public class LinkedList<E> { //implements List<E>
         tail = node;
         currentSize++;
     }
+
+    public E removeFirst(){
+        // 경계 조건 1
+        if(head==null){
+            return null;
+        }
+        E temp = head.data;
+        // 경계 조건 2
+        if(head.next == null){
+            head = tail = null;
+        }
+        // 일반적인 경우
+        else {
+            head = head.next;
+        }
+        currentSize--;
+        return temp;
+    }
+
+    public E removeLast(){
+        // 자료구조가 비어있는 경우
+        if(head==null) { return null; }
+        E temp = head.data;
+        // 자료구조에 단 하나의 요소만 있는 경우
+        if(head == tail){
+            return removeFirst();
+        }
+
+        Node<E> current = head, previous = null;
+        while(current != tail){
+            previous = current;
+            current = current.next;
+        }
+        previous.next = null;
+        tail = null;
+        currentSize--;
+        return temp;
+    }
+
+    public E remove(E obj){
+        Node<E> current = head, previous = null;
+        while(current != null){ // removeFirst와 달리 current != null 까지 보는 이유는 마지막 노드까지 처리해주기 위함
+            if(((Comparable<E>)obj).compareTo(current.data) == 0){ // 찾은 경우
+                if(current == head){ return removeFirst();} // 1번째 노드인 경우
+                if(current == tail){ return removeLast(); } // 마지막 노드인 경우
+                currentSize--;
+                previous.next = current.next; // remove해주는 코드
+                return current.data;
+            }
+            previous = current;
+            current = current.next;
+        }
+        return null;
+    }
+
+    public boolean contains(E obj){
+        Node<E> current = head;
+        while(current != null){ // removeFirst와 달리 current != null 까지 보는 이유는 마지막 노드까지 처리해주기 위함
+            if(((Comparable<E>)obj).compareTo(current.data) == 0){ return true;}
+            current = current.next;
+        }
+        return false;
+    }
 }
 
 

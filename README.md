@@ -812,7 +812,7 @@ public class Node<E> {
 
 * ```시간 복잡도 = 1```
 
-### 4. addLast
+### 4. addLast 메서드
 * 새로운 노드를 연결리스트 뒷부분에 추가하기 위해선 ```임시 포인터```를 사용한다.(head부터 시작해서 next를 사용하여 마지막 노드를 가기 위해선 너무 많은 next가 필요하기 때문)
 * 기본적인 코드
     ```java
@@ -865,3 +865,100 @@ public class Node<E> {
         currentSize++;
     }
    ```
+### 5. removeFirst 메서드
+* 일반적인 경우엔 ```head = head.next```를 해주면 다음 노드를 가리키게 되고 그게 첫 번째 노드가 된다.
+* 경계 상황
+  1. 자료구조가 비어있는 경우
+     * 위의 경우는 ```head```가 null을 가리키기 때문에 ```head = head.next```하게 되면 ```NullPointerException```이 발생한다.
+     * 따라서 이 경우에는 그냥 null을 반환해주면 된다
+  2. 자료구조에 단 하나의 요소만 있는 경우
+     * ```head = tail = null```처리 해주면 된다.
+```java
+    public E removeFirst(){
+        // 경계 조건 1
+        if(head==null){
+            return null;
+        }
+        E temp = head.data;
+        // 경계 조건 2
+        if(head.next == null){
+            head = tail = null;
+        }
+        // 일반적인 경우
+        else {
+            head = head.next;
+        }
+        currentSize--;
+        return temp;
+    }
+```
+
+### 6. removeLast 메서드
+* 마지막 노드만 삭제하기 위해선 ```tail```이 ```마지막에서 두번째 노드```를 가리키도록 하면 된다.
+* 위를 위해선 __임시 포인터 변수__ ```current```와 ```previous```가 필요하다. current는 현재 위치를 가리키는 포인터, previous는 그 전 위치를 가리키는 포인터다.
+* __current가 tail과 같은 순간 previous는 마지막에서 2번째 노드를 가리킨다__
+* __경계 상황__
+  * 자료구조가 비어있는 경우, 요소가 하나만 존재하는 경우 모두 ```removeFirst```와 같은 상황이기에, 동일하게 처리하고, ```removeFirst```메서드를 불러오면 된다.
+```java
+    public E removeLast(){
+        // 자료구조가 비어있는 경우
+        if(head==null) { return null; }
+        E temp = head.data;
+        // 자료구조에 단 하나의 요소만 있는 경우
+        if(head == tail){
+            return removeFirst();
+        }
+
+        Node<E> current = head, previous = null;
+        while(current != tail){
+            previous = current;
+            current = current.next;
+        }
+        previous.next = null;
+        tail = null;
+        currentSize--;
+        return temp;
+    }
+```
+
+### 7. remove 메서드(contains 메서드, find 메서드)
+* __remove 메서드의 과정__
+  1. Comparable 인터페이스를 사용하어 __제거하고 싶은 요소의 위치를 찾는다.__
+  2. ```바로 앞 노드의 next 포인터```가 ```다음 노드```를 가리키게 하면 된다.(```previous```,```current```포인터 변수로 각각 ```바로 앞 노드```, ```찾고자 한 노드```를 가리키도록 한다.)
+
+* __경계 조건__
+    1. ```노드가 1개인 경우```, ```첫 번째 노드를 삭제하는 경우```
+        * 위 경우는 ```removeFirst 메서드```를 불러온다.
+    2. ```마지막 노드를 삭제하는 경우```
+        * 위 경우는 ```removeLast 메서드```를 불러온다.
+    3. 자료구조가 비어있는 경우
+        * 위 경우는 remove 메서드 과정을 따라가면 자연스럽게 처리된다.
+```java
+    public E remove(E obj){
+        Node<E> current = head, previous = null;
+        while(current != null){ // removeFirst와 달리 current != null 까지 보는 이유는 마지막 노드까지 처리해주기 위함
+            if(((Comparable<E>)obj).compareTo(current.data) == 0){ // 찾은 경우
+                if(current == head){ return removeFirst();} // 1번째 노드인 경우
+                if(current == tail){ return removeLast(); } // 마지막 노드인 경우
+                currentSize--;
+                previous.next = current.next; // remove해주는 코드
+                return current.data;
+            }
+            previous = current;
+            current = current.next;
+        }
+        return null;
+    }
+```
+* while문의 조건이 ```removeFirst```와 달리 ```current != null```인 이유는 마지막 노드까지 처리해줘야 하기 때문.
+* 위 코드를 살짝만 변형하여 ```contains(find) 메서드```또한 만들 수 있다.
+```java
+    public boolean contains(E obj){
+        Node<E> current = head;
+        while(current != null){ // removeFirst와 달리 current != null 까지 보는 이유는 마지막 노드까지 처리해주기 위함
+            if(((Comparable<E>)obj).compareTo(current.data) == 0){ return true;}
+            current = current.next;
+        }
+        return false;
+    }
+```
