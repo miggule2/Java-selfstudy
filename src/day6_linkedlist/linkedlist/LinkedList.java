@@ -1,8 +1,34 @@
 package day6_linkedlist.linkedlist;
 
-import java.util.List;
+import java.util.Iterator;
+import java.util.NoSuchElementException;
 
-public class LinkedList<E> { //implements List<E>
+public class LinkedList<E> implements Iterable<E>{
+    public Iterator<E> iterator() {
+        return new IteratorHelper<>();
+    }
+
+    class IteratorHelper<E> implements Iterator<E>{
+        LinkedList<E>.Node<E> index;
+        public IteratorHelper(){
+            index = (LinkedList<E>.Node<E>) head;
+        }
+        @Override
+        public boolean hasNext() {
+            return index != null;
+        }
+
+        @Override
+        public E next() {
+            if(!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            E val = index.data;
+            index = index.next;
+            return val;
+        }
+    }
+
     // 노드 정의
     class Node<E> {
         E data;
@@ -120,6 +146,16 @@ public class LinkedList<E> { //implements List<E>
             current = current.next;
         }
         return false;
+    }
+
+    public E peekFirst(){
+        if(head == null){return null;}
+        return head.data;
+    }
+
+    public E peekLast(){
+        if(tail == null){return null;}
+        return tail.data;
     }
 }
 

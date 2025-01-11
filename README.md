@@ -962,3 +962,87 @@ public class Node<E> {
         return false;
     }
 ```
+### 8. peek 메서드
+* peek 메서드는 __하나의 요소를 살펴보기 위한__ 메서드.
+* __경계 조건__
+  * ```자료구조가 비어있는 경우``` : ```NullPointerException```을 발생시킬 수 있기 때문에 따로 처리.
+* ```peakFirst```구현
+```java
+public E peekFirst(){
+        if(head == null){return null;}
+        return head.data;
+    }
+```
+* ```peekLast```구현
+```java
+public E peekLast(){
+    if(tail==null) return null;
+    return tail.next;
+}
+```
+
+### 9. 연결리스트 테스트
+```java
+public class LinkedListTester {
+    public static void main(String[] args) {
+        LinkedList<Integer> list = new LinkedList<>();
+        int n = 10;
+        for(int i = 0; i < n; i++){
+            list.addFirst(i);
+        }
+        for(int i = 0; i < n; i++){
+            System.out.println(list.removeFirst());
+        }
+    }
+}
+```
+* 위와 같은 코드로 앞서 만들었던 연결리스트를 테스트 할 수 있음.
+
+### 10. 반복자
+* 일반적으로 배열의 각 요소를 반복하기 위해선 아래와 같은 방법을 사용한다.
+```java
+int arr[] = {1,2,3,4,5};
+for (int i=0; i<arr.length; i++){
+    system.out.println(arr[i]);
+}
+```
+
+* 하지만 자바에선 아래와 같은 더 간단한 방법도 지원한다.
+```java
+int arr[] = {1,2,3,4,5};
+for (int x:arr){
+    system.out.println(x);
+}
+```
+
+* 두번째와 같은 방법을 사용하기 위해선 ```Iterator 인터페이스```를 구현해야 한다.
+```java
+public class LinkedList<E> implements Iterable<E> {
+    public Iterator<E> iterator() {
+        return new IteratorHelper<>();
+    }
+
+    class IteratorHelper<E> implements Iterator<E> {
+        LinkedList<E>.Node<E> index;
+
+        public IteratorHelper() {
+            index = (LinkedList<E>.Node<E>) head;
+        }
+
+        @Override
+        public boolean hasNext() {
+            return index != null;
+        }
+
+        @Override
+        public E next() {
+            if (!hasNext()) {
+                throw new NoSuchElementException();
+            }
+            E val = index.data;
+            index = index.next;
+            return val;
+        }
+    }
+}
+```
