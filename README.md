@@ -1083,14 +1083,15 @@ public class LinkedList<E> implements Iterable<E> {
 * 연결 리스트에 대해서 예전에 공부해서 알고 있었던 내용이 많았지만, 그걸 자바 코드로 설명해주고, 직접 구현해보니 더 와닿고 재밌는 경험이었다.
 * 특히 경계조건에 대한 설명으로 연결 리스트에 대해 더 엄밀하고, 더 생각할 수 있는 기회가 되었다.
 
+< 6일차 출처 : https://www.boostcourse.org/cs204/joinLectures/184801?isDesc=false >
 ## 7일차 - Hash(해시)
 ### 1. 해시 소개
 * 연결리스트의 단점은 리시트의 요소를 찾고 싶을 땐, 무조건 모든 요소를 살펴봐야 한다는 점.
 * 이런 단점을 해결하여, ```key```와 연관된 ```value```로 연결되어, 키가 주어지면 그와 연결된 값을 바로 찾을 수 있는 자료구조.
 * 이러한 아이디어 __associative array__ 에서 시작되었음.
-<img src="https://blogs.mathworks.com/matlab/files/2022/09/Dictionary2022b_1.png">
+<img src="https://i.namu.wiki/i/_KShrtIk7t_mXXZhVJDuwtk0r5cMWq1hxcS_YWmt-AO3eoF5wjUQHPGHkrtlJ5cL3WeRkkEoC1fwS41QypVtsmTDXIZ5jugFF6IP8quFB1e9B-S3FTfXFalH9oMVmwp-QvqdNmLEwkjSp7MP6ZLvCw.webp">
 
-< 출처 : https://blogs.mathworks.com/matlab/2022/09/15/an-introduction-to-dictionaries-associative-arrays-in-matlab/ >   
+< 출처 : https://namu.wiki/w/%ED%95%B4%EC%8B%9C >   
 
 ### 2. 해시 함수.
 * ```key```로 들어오는 값을 위해선 그 값을 그대로 사용할 순 없고, ```해시 함수```를 통해 ```정수값```으로 바꾸어 사용해야 한다.
