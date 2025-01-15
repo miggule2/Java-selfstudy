@@ -1165,3 +1165,77 @@ hashval = hashval % tableSize;
         * __hashCode 함수를 2개__ 사용하여, 값이 존재한다면, __두번째 hashCode 값을 더한 칸__ 에 자료를 넣는 방법.
         * 장점 : 위의 두 방법보다 고르게 자료를 넣을 수 있음.
         * 단점 : 모든 자료가 2개의 hashCode를 갖는다는 보장이 없기에, 활용하기에 여러움.
+
+### 9. 체이닝(Chaining)
+* __체이닝__ 은 __테이블의 요소 마다 연결 리스트__ 를 만들어 많은 데이터를 수용할 수 있도록 하는 방법.
+* 체이닝을 활용하면 __수용 가능한 요소 개수에 제한이 없어지고, 크기 조정도 자주 할 필요가 없어진다.__
+   
+
+<img src="https://cphinf.pstatic.net/mooc/20210430_91/16197137708007dMyE_PNG/mceclip2.png">
+   
+ 
+* ```적재율 λ``` = ```항목 개수 / 사용 가능한 체인 개수``` 
+* 체이닝의 특성으로 한 체인에 여러 개의 항목이 들어갈 수 있어 ```적재율 λ```은 1보다 커질 수 있다. 
+    
+ 
+* __최선의 경우__ 에는 ```연결리스트```의 특성에 따라 __add, remove, find__ 등을 ```O(1)```에 수행할 수 있다.
+* 하지만 __최악의 경우__ 즉, 하나의 연결리스트에 너무 많은 요소가 들어간 경우에는 ```O(n)```이 돼버려, hashtable의 장점을 살릴 수 없게 된다.
+
+### 10. Rehashing
+* 체인 해시에서 ```적재율 λ```이 일정 수준이상 넘어가면, ```크기 조정```을 해야한다.   
+    
+
+* 이를 위해선 일단 __테이블의 크기를 2배로 늘린다.__
+* 그런 다음 원래 테이블에 있던 요소를 같은 index로 옮겨주기만 하면 될까?
+* __아니다!__ 그 이유는 다음과 같다.
+```java
+// data의 index 결정
+int idx = x.hashCode(s);
+idx = idx & ox7FFFFFFF;
+idx = idx % tableSize;
+```
+* 위는 데이터를 위한 ```index```를 구하는 코드이다.
+* 그런데 ```tableSize```가 달라졌기 때문에, 같은 데이터라 하더라도, 테이블 크기가 달라지면 ```index```가 달라져 원하는 값을 찾을 수 없다.
+    
+ 
+* 그렇기에 __원래 테이블의 모든 요소__ 를 __2배 커진 배열의 크기를 넣어 구한 ```index```에 넣어줘야 한다.__
+
+### 11. HashElement 내부 클래스
+```java
+class HashElement<K,V> implements Comparable<HashElement<K,V>>{
+        // 키, 값 정의
+        K key;
+        V value;
+        public HashElement(K key, V value){
+            this.key = key;
+            this.value = value;
+        }
+        // compareTo 함수
+        public int compareTo(HashElement<K,V> o){
+            return ((Comparable<K>)this.key).compareTo(o.key);
+        }
+    }
+```
+* 값을 비교하기 위해 ```Comparable 인터페이스```를 구현하기 위해, ```compareTo 메소드```를 정의.
+    * 키 값만 같으면 같은 ```HashElement```라고 판단.
+    * 위를 위해선 key의 타입(클래스)에서 ```compareTo```가 정의되어 있어야 함.
+
+### 12. Hash 생성자
+```java
+public class Hash<K,V>{
+    LinkedList<HashElement<K,V>>[] harray;
+    public Hash(int tableSize){
+        this.tableSize = tableSize;
+        harray = (LinkedList<HashElement<K,V>>[])new LinkedList[tableSize]; // 제네릭 배열을 위한 형변환
+        // 연결리스트 체이닝 
+        for(int i=0; i<tableSize; i++){
+            harray[i] = new LinkedList<>();
+        }
+        numElements = 0;
+        maxLoadFactor = 0.75;
+    }
+}
+```
+* __```loadFactor```가 너무 작으면__ 크기 조정을 자주 해줘야 하기 때문에, 비효율적이고
+* __```loadFactor```가 너무 크면__ 테이블 크기에 비해 요소가 너무 많아, 탐색 시에 시간이 많이 걸림.
+* __적당한 크기의 ```loadFactor```가 필요.
