@@ -1239,3 +1239,119 @@ public class Hash<K,V>{
 * __```loadFactor```가 너무 작으면__ 크기 조정을 자주 해줘야 하기 때문에, 비효율적이고
 * __```loadFactor```가 너무 크면__ 테이블 크기에 비해 요소가 너무 많아, 탐색 시에 시간이 많이 걸림.
 * __적당한 크기의 ```loadFactor```가 필요.
+
+### 13. add, remove 메소드
+* __add 메소드__
+```java
+    public boolean add(K key, V value){
+        // resize
+        if(loadFactor() > maxLoadFactor) resize(tableSize*2);
+
+        // 키,값을 통해 저장해놓을 object he 정의
+        HashElement<K,V> he = new HashElement<>(key, value);
+        // he의 index찾기
+        int hashVal = key.hashCode();
+        hashVal = hashVal & 0x7FFFFFFF;
+        hashVal = hashVal % tableSize;
+        // add he
+        harray[hashVal].addFirst(he);
+
+        numElements++;
+        return true;
+    }
+```
+* ```loadFactor```가 너무 커질 경우 ```resize```해줘야 한다.
+* ```key```와 ```value```를 가지는 ```해시 요소```를 생성해서 테이블에 넣어주는 메소드
+    
+ 
+* __remove 메소드__
+```java
+    public boolean remove(K key, V value){
+        // 삭제하고 싶은 데이터를 찾기 위해 키 값이 같은 object 생성
+        HashElement<K,V> he = new HashElement<>(key, value);
+        // he의 index찾기
+        int hashVal = key.hashCode();
+        hashVal = hashVal & 0x7FFFFFFF;
+        hashVal = hashVal % tableSize;
+        // add he
+        harray[hashVal].remove(he);
+
+        numElements--;
+        return true;
+    }
+```
+* 삭제하고 싶은 ```key```를 가지는 해시요소를 만들어 key값이 같은 해시 테이블 내 요소를 삭제한다.
+
+### 14. getValue 메소드
+```java
+    public V getValue(K key){
+        // 해당하는 index찾기
+        int hashVal = key.hashCode() & 0x7FFFFFFF % tableSize;
+
+        // harray[index]의 LinkedList에서 key값이 같은 element 찾기 위해 반복.
+        for(HashElement<K,V> he : harray[hashVal]){
+            if(((Comparable<K>)he.key).compareTo(key) == 0) return he.value;
+        }
+        return null;
+    }
+```
+* ```key```로 ```hashVal```을 구해 그 index의 연결리스트를 순회하며 ```key```값을 가지는 ```해쉬 요소```의 ```value```를 반환.
+* __시간복잡도__ : 일반적인 경우 ```O(1)```이지만, 연결리스트에 너무 많은 요소가 들어있는 경우, 즉 최악의 경우에는 ```O(n)```이 된다.
+
+### 15. resize 메소드
+```java
+    public void resize(int newSize){
+        LinkedList<HashElement<K,V>> [] newArray = (LinkedList<HashElement<K,V>>[]) new LinkedList[newSize];
+
+        for(int i=0; i<newSize; i++){
+            newArray[i] = new LinkedList<>();
+        }
+
+        for(K key : this){
+            V val = getValue(key);
+            HashElement<K,V> he = new HashElement<>(key, val);
+            int hashVal = key.hashCode()&0x7FFFFFFF%newSize;
+            newArray[hashVal].addFirst(he);
+        }
+        harray = newArray;
+        tableSize = newSize;
+    }
+```
+* 위의 __reHashing__ 의 파트에서 설명했듯, ```resize```를 할 때는, 새로운 크기의 해시 테이블을 만들어 __원래 테이블의 모든 요소를 옮겨 주어야 한다__
+* 위의 과정에서 ```hashVal```은 새로운 크기로 나눈 값이 들어가야 한다.
+
+### 16. KEY 반복자
+```java
+    class IteratorHelper<T> implements Iterator<T> {
+        T[] keys;
+        int position;
+        // key반복자
+        public IteratorHelper(){
+            keys = (T[]) new Object[numElements];
+            int p = 0;
+            for(int i=0; i<tableSize; i++){
+                for(HashElement<K,V> he : harray[i]){
+                    keys[p++] = (T)he.key;
+                }
+            }
+
+            position = p;
+        }
+        
+        // 끝을 확인할 때 사용
+        @Override
+        public boolean hasNext() {
+            return position < keys.length;
+        }
+        
+        // 해시의 모든 요소를 확인할 때 사용
+        @Override
+        public T next() {
+            if(!hasNext()) return null;
+            return keys[position++];
+        }
+    }
+```
+* ```resize 메소드```에서 ```forEach문```을 사용하기 위해 ```반복자```를 설계해준다.
+* 생성자에서 ```key```값만 갖는 배열을 만든 후, 해시 테이블의 모든 요소를 순환하며 ```key```를 배열에 모두 넣는다.
+* 이제 ```next 메소드```에선 배열의 값만 return 해주면 된다.
