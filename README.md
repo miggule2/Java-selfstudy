@@ -1355,3 +1355,33 @@ public class Hash<K,V>{
 * ```resize 메소드```에서 ```forEach문```을 사용하기 위해 ```반복자```를 설계해준다.
 * 생성자에서 ```key```값만 갖는 배열을 만든 후, 해시 테이블의 모든 요소를 순환하며 ```key```를 배열에 모두 넣는다.
 * 이제 ```next 메소드```에선 배열의 값만 return 해주면 된다.
+
+## 8일차 - 트리
+### 1. 트리 기본 개념
+<img src="https://cphinf.pstatic.net/mooc/20210430_94/1619715766084zCR85_PNG/mceclip0.png">
+
+* 가계도처럼 __노드를 나무 형태로 저장하는 자료구조__ 를 의미. 위의 그림과 같이 모든 노드는 __부모와 자식 관계__ 로 이루어짐.
+* __루트(ROOT)__ : 트리의 최상단에 위치한 노드. 트리 자료구조에서 가장 중요한 노드(특히 힙에서)
+* __잎(leaf)__ : 트리의 최하단에 위치한 노드. 즉, 자식이 없는 노드.
+* __간선(edge)__ : 두 노드를 연결하는 선. 뿌리로부터의 노드 개수로 ```level```을 결정. (예를 들어, 위의 그림에서 ```leaf```는 ```root```사이에 간선이 두 개 존재하기에, ```level 2```)
+
+### 2. 트리의 종류
+1. __완전 트리(Complete binary Tree)__   
+* __마지막 level을 제외한 레벨의 노드는 꽉 차있고, 마지막 level의 노드들은 왼쪽부터 오른쪽으로 차있는 형태의 트리__
+<img src="https://cphinf.pstatic.net/mooc/20210525_253/1621925636427oUwwc_PNG/mceclip0.png">   
+  
+
+
+2. __Full Binary Tree__
+* __모든 노드의 자식이 0개 혹은 2개인 트리__. 즉, __leaf node가 아닌 노드는 모두 2개의 자식을 가진다.__
+
+    <img src="https://media.geeksforgeeks.org/wp-content/uploads/20221229135813/full.png">
+    
+    < 출처 : https://www.geeksforgeeks.org/full-binary-tree/ >
+    
+ 
+
+3. __Perfect Binary Tree__
+* __모든 leaf가 아닌 노드는 두개의 자식을 가지고, 모든 leaf들은 같은 레벨인 트리.__
+<img src="https://media.geeksforgeeks.org/wp-content/uploads/20220630154756/img2.jpg">
+< 출처 : https://www.geeksforgeeks.org/perfect-binary-tree/ >
