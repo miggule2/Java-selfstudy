@@ -111,7 +111,7 @@ public class Hash<K,V> implements Iterable<K>{
                 }
             }
 
-            position = p;
+            position = 0;
         }
 
         @Override
