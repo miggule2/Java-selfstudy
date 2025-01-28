@@ -1396,19 +1396,183 @@ public class Hash<K,V>{
 * 힙에 새로운 요소를 추가하거나 제거하기 위해선 __힙 속성(```Heap Property```)__ 을 지켜야 한다.(최대힙의 경우 부모 노드가 자식 노드보다 커야 함)
 * __추가__ 
   1. 비어있는 공간에 노드 추가
-  2. 부모 노드보다 큰 숫자인지 확인하고 크면 두 노드의 자리를 바꿈(```trickle up```)
-  * 이 과정을 반복하여 __힙 속성을 만족시킴__
+  2. 부모 노드보다 큰 숫자인지 확인하고 크면 두 노드의 자리를 바꿈
+  * 이 과정을 반복하여 __힙 속성을 만족시킴__(```trickle up```)
   <img src="https://cphinf.pstatic.net/mooc/20210525_22/1621923502381xjAl3_PNG/mceclip0.png">   
   
   
 * __삭제__
   1. 루트 노드를 삭제
   2. 마지막 요소를 루트에 넣어준다.
-  3. 힙의 규칙을 만족시키기 위해 루트에서부터 자식 중 큰 자식과 자리를 바꿈(```trickle down```)
-    * 이 과정을 반복하여 __힙 속성을 만족시킴__
+  3. 힙의 규칙을 만족시키기 위해 루트에서부터 자식 중 큰 자식과 자리를 바꿈
+    * 이 과정을 반복하여 __힙 속성을 만족시킴__(```trickle down```)
 
 * Q&A 
   * Q) 루트를 제거할 때, 트리의 마지막 요소를 루트 자리에 넣어주는 이유는?
   * A) 루트를 삭제하면 트리 구조를 유지하기 위해 다른 노드가 들어가야함.
   * A) 자식 노드 중 특정 위치의 큰 값이 루트에 들어가면, 그 후 많은 노드들을 다시 조정해야 하기에 비효율적.
   * A) 마지막 노드를 루트로 올려서 ```trickle down```하는 것이 구조적으로 그 노드에 대해서만 생각해주면 되는 것이기에 더 효율적
+
+### 5. trickle up
+* 힙은 ```완전이진트리```이기 때문에 자식과 부모의 위치를 계산할 수 있다
+* __자식__ : ```2*parent+1``` or ```2**parent+2```
+* __부모__ : ```floor((child-1)/2)```
+* 위의 성질을 이용해서 ```trickle up```함수를 작성할 수 있다.
+* __부모와 자신을 비교해 부모보다 더 크면 swap을 반복__
+```java
+    public void trickleUp(int position){
+        if(position == 0) return;
+
+        int parent = (int)Math.floor((position-1)/2);
+        if(((Comparable<E>)array[position]).compareTo(array[parent])>0){
+            swap(position,parent);
+            trickleUp(parent);
+        }
+    }
+```
+
+* Q&A
+  * Q) 위 코드에서 
+
+### 6. trickle down
+* 루트의 위치부터 왼쪽 자식 or 오른쪽 자식과 크기를 비교하며 더 큰 것과 swap하며 내려감
+```java
+    public void trickleDown(int position){
+        int left = 2*position+1;
+        int right = 2*position+2;
+
+        // 마지막에 왼쪽 자식이 큰 경우
+        if(left == lastPosition && ((Comparable<E>)array[position]).compareTo(array[left])<0){
+            swap(position,left);
+            return;
+        }
+        // 마지막에 오른쪽 자식이 큰 경우
+        if(right == lastPosition && ((Comparable<E>)array[position]).compareTo(array[right])<0){
+            swap(position,right);
+            return;
+        }
+        // 마지막에 부모가 더 큰 경우
+        if(left >= lastPosition || right >= lastPosition){
+            return;
+        }
+        // 왼쪽 자식이 큰 경우
+        if(((Comparable<E>)array[left]).compareTo(array[right])>0 && ((Comparable<E>)array[position]).compareTo(array[left])<0){
+            swap(position,left);
+            trickleDown(left);
+            return;
+        }
+        // 오른쪽 자식이 큰 경우
+        else if(((Comparable<E>)array[position]).compareTo(array[right])<0){
+            swap(position,right);
+            trickleDown(right);
+            return;
+        }
+        // 나머지 중간에 부모가 더 큰 경우에는 그냥 return 처리된다.
+    }
+```
+* Q&A
+  * Q. 루트의 정보를 없애는 대신 swap 함수를 이용하여 제거하면 어떤 점이 좋나요?
+  * A. 루트를 마지막 위치와 swap한 것을 모아두면 차례되로 정렬이 됨.
+### 7. heap sort
+* 힙 규칙에 맞게 숫자의 순서를 맞추는 과정을 __힙 정렬 알고리즘__ 이라고 한다. 임의의 숫자들을 나열하고, __힙 규칙에 맞게 trickleDown을 반복하면__ 정렬이 완료된다.
+* __힙 정렬 과정__ (chat gpt)
+  - 초기 배열: [6, 2, 3, 5, 4]
+  1. 최대힙 생성 후 첫 번째 최대값인 6과 마지막 값을 교환 -> [4, 2, 3, 5, 6]
+  2. 최대힙 재구성 -> [5, 2, 3, 4, 6]
+  3. 최대값인 5와 마지막 값을 교환 -> [3, 2, 4, 5, 6]
+  4. 최대힙 재구성 -> [4, 2, 3, 5, 6]
+  5. 반복하여 [2, 3, 4, 5, 6]이 됨.   
+   
+* ```최대힙```을 remove하면 heap의 최솟값만 pop하기 때문에, 그것들을 배열의 마지막에서 반대로 저장하면 정렬이 됨.
+* remove할 때마다 ```trickleDown```해야 하기 때문에, 각 요소마다 O(logn)의 시간 복잡도가 나오고, 결론적으로 __힙 정렬은 ```O(nlogn)```의 시간복잡도__를 가진다.
+
+### 8. 트리 : Node
+* 트리에서 __부모 노드보다 큰 노드는 오른쪽__, __작은 노드는 왼쪽__ 에 위치해야 한다.
+* 그래서 트리에서 어떤 노드를 찾을 경우, 부모노드보다 크면 오른쪽, 작으면 왼쪽으로 이동하면 된다.
+* 이러한 특성으로 ```contains 함수```는 각 부모를 기준으로 절반의 데이터는 무시하여 ```O(logn)```의 시간복잡도를 가짐.
+    
+ 
+* 연결리스트에서의 노드와 비슷하게 __트리에서의 노드__ 는 __left,right 포인터와 data__ 로 구성됨.
+```java
+public class Node<E> {
+    E data;
+    Node<E> left,right;
+    public Node(E data) {
+        this.data = data;
+        left = right = null;
+    }
+}
+```
+* Q&A
+    * Q. left, right 포인터는 엄마 노드에서 자식 노드로 향하는 포인터입니다. 자식 노드에서 엄마 노드로 향하게 하면 어떤 문제가 생길 수 있을까요?
+    * A. parent 포인터가 있으면 부모에게도 접근할 수 있어 보다 많은 기능을 구현할 수 있겠지만, 그만큼 구현이 복잡해진다는 단점이 생김.
+  
+
+### 9. 트리 : add (recursion)
+* __트리에서 add하는 과정__
+  1. root부터 시작.
+  2. __트리의 규칙__ 에 맞춰 내려감.
+  3. __null인 부분__ 을 찾았으면 그 곳에 새로운 노드 추가.
+* __재귀함수__ 를 이용해서 구현.
+```java
+    // 사용자가 접근하는 add함수
+    public void add(E obj){
+        if(root == null){
+            root = new Node<>(obj);
+        }
+        else add(obj,root);
+        currentSize++;
+    }
+
+    // 실제로 사용되는 add함수
+    private void add(E obj, Node<E> node){
+        if(((Comparable<E>)obj).compareTo(node.data)>0){
+            //go to right
+            if(node.right == null){
+                node.right = new Node(obj);
+                return;
+            }
+            add(obj, node.right);
+            return;
+
+        }
+        //go to left (같을 경우에도 왼쪽으로 감)
+        if(node.left == null){
+            node.left = new Node(obj);
+            return;
+        }
+        add(obj, node.left);
+        return;
+    }
+```
+* Q&A
+    * Q. 재귀 함수를 활용하였을 때의 장점은 무엇인가요?
+    * A. add함수의 경우 얼마나, 어떻게 내려가야 하는지 알 수 없는데 재귀 함수를 사용하면 그때그때의 기능을 구현해놓으면 그에 맞게 기능할 수 있다,
+
+### 10. 트리 : contains
+* __트리에서 contains 함수 실행 과정__
+  1. 루트에서 시작
+  2. __트리 규칙에 따라 내려감__
+  3. 내려가다가 __요소를 찾으면 true__, __찾지 못하고 null까지 내려가면 false__ 반환.
+* __재귀함수__ 를 이용해서 구현.
+```java
+    // 사용자가 접근하는 contains함수
+    public boolean contains(E obj){
+        return contains(obj,root);
+    }
+
+    // 실제 사용되는 contains함수
+    private boolean contains(E obj,Node<E> node){
+        // 요소를 찾아 내려갔는데, null이 나오는 경우 -> 요소가 존재하지 않는 경우.
+        if(node == null) return false;
+        // node의 data와 일치.
+        if(((Comparable<E>)obj).compareTo(node.data)==0) return true;
+        // data가 node.data보다 큰 경우
+        if(((Comparable<E>)obj).compareTo(node.data)>0) contains(obj,node.right);
+        // data가 node.data보다 작은 경우
+        return contains(obj,node.left);
+    }
+```
+* Q&A
+    * Q. 트리가 비어있을 경우에도 contains 함수는 잘 동작하나요?
+    * A. 트리가 비어있을 경우 private contains함수에 들어가자마자 ```node == null```에서 ```root == null```에 걸려 false를 올바르게 return한다.
