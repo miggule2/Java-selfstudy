@@ -57,4 +57,32 @@ public class Tree<E> {
         // data가 node.data보다 작은 경우
         return contains(obj,node.left);
     }
+
+    // 왼쪽 서브트리에 불균형이 있는 경우 -> right rotate
+    public Node<E> rightRotate(Node<E> node){
+        Node<E> temp = node.left;
+        node.left = temp.right;
+        temp.right = node;
+        return temp;
+    }
+
+    // 오른쪽 서브트리에 불균형이 있는 경우 -> left rotate
+    public Node<E> leftRotate(Node<E> node){
+        Node<E> temp = node.right;
+        node.right = temp.left;
+        temp.left = node;
+        return temp;
+    }
+
+    // 오른쪽 자식의 왼쪽 서브트리에 불균형이 있는 경우 -> 부모 노드에 대해서 right rotation, 조부모 노드를 left rotation
+    public Node<E> rightLeftRotate(Node<E> node){
+        node.right = rightRotate(node.right);
+        return leftRotate(node);
+    }
+
+    // 왼쪽 자식의 오른쪽 서브트리에 불균형이 있는 경우 -> 부모 노드에 대해서 left rotation, 조부모 노드를 right rotation
+    public Node<E> leftRightRotate(Node<E> node){
+        node.left = leftRotate(node.left);
+        return rightRotate(node);
+    }
 }
