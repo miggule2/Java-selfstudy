@@ -1576,3 +1576,189 @@ public class Node<E> {
 * Q&A
     * Q. 트리가 비어있을 경우에도 contains 함수는 잘 동작하나요?
     * A. 트리가 비어있을 경우 private contains함수에 들어가자마자 ```node == null```에서 ```root == null```에 걸려 false를 올바르게 return한다.
+
+### 11. 트리 : 제거
+* 트리에서 요소를 제거하는 경우엔 __자식 노드의 개수__ 에 따라 달라진다.
+1. 리프 노드를 제거하는 경우
+   * 그 노드의 __부모 노드의 포인터를 null__ 로 지정.
+2. 삭제하려는 노드의 자식 노드가 하나인 경우
+   * 그 노드의 __부모 노드의 포인터를 자식 노드와 연결__ . 이때 주의해야 할 점은 부모 노드는 그 노드와 동일한 포인터를 사용해야함.(ex : right or left)
+3. 삭제하려는 노드의 자식 노드가 두개인 경우
+   * 삭제하려는 노드를 루트로 하는 서브트리에서 __중위 후속자와 중위 선임자들 중 하나의 위치와 변경한 뒤 리프 노드가 된 노드를 삭제__
+   * __중위 후속자(in order successor)__ : 제거하려는 노드에서 오른쪽으로 한 번 갔다가 왼쪽으로 쭉 내려갔을 때 나오는 리프 노드. 즉, __제거하고자 하는 노드보다 큰 노드 중 가장 작은 노드__
+   * __중위 선임자(in order predessor)__ : 제거하려는 노드에서 왼쪽으로 한 번 갔다가 오른쪽으로 쭉 내려갔을 때 나오는 리프 노드. 즉, __제거하고자 하는 노드보다 작은 노드 중 가장 큰 노드__
+   * (중위 선임자, 후속자라고 하는 이유는 중위 순회를 했을 때, 리프 노드 전,후에 방문하는 노드기 때문)
+
+* Q&A
+  * Q. 자식 노드가 2개인 노드를 제거할 때, 중위 후속자 혹은 중위 선임자와 자리를 바꾸는 이유는 무엇인가요?
+  * A. 중위 후속자와 중위 선임자와 루트를 바꿔야 트리의 정렬 구조를 해치지 않고, 루트에 위치했던 노드가 리프 노드로 가서 삭제 작업이 간단해지기 때문이다.
+
+### 12. 트리 : 회전
+* 회전이란 __균형 잡힌 트리__ 를 만들기 위해 __트리의 노드 위치를 바꾸는 과정__ .
+* 밑의 그림처럼 연결리스트와 같이 __한 방향으로만 나열된 트리__ 를 균형 잡혀있지 않은 트리라고 한다. 
+* 균형 잡혀 있지 않은 트리는 특정 요소를 탐색할 때, 균형잡힌 트리(```O(logn)```)과 달리 ```O(n)``` 의 시간 복잡도를 가져 비효율적이다.
+
+<img src="https://www.eecs.umich.edu/courses/eecs380/ALG/niemann/s_fig33.gif">
+
+< 출처 : https://www.eecs.umich.edu/courses/eecs380/ALG/niemann/s_bin.htm >
+
+* 따라서 균형잡힌 노드로 만들기 위해 __조부모 노드, 부모 노드, 자식 노드의 크기 관계에 따라 우측 회전 or 좌측 회전__ 을 진행. 재정렬된 트리의 루트는 항상 __중간 크기의 요소__ 가 된다.
+
+1. __왼쪽 서브트리__ 에서 불균형이 발생한 경우
+
+<img src="https://cphinf.pstatic.net/mooc/20210430_213/1619718087522X9K3C_PNG/mceclip0.png">
+
+* 위의 경우엔 __grandparent 노드를 right rotation__ 하여, grandparent 노드를 parent 노드의 오른쪽 자식 위치로 옮겨줌.
+
+2. __오른쪽 서브트리__ 에서 불균형이 발생한 경우
+
+<img src="https://cphinf.pstatic.net/mooc/20210430_74/1619718245957AApud_PNG/mceclip2.png">
+
+* 위의 경우엔 __grandparent 노드를 left rotation__ 하여, grandparent 노드를 parent 노드의 왼쪽 자식 위치로 옮겨줌.
+
+```java
+    // 왼쪽 서브트리에 불균형이 있는 경우 -> right rotate
+    public Node<E> rightRotate(Node<E> node){
+        Node<E> temp = node.left;
+        node.left = temp.right;
+        temp.right = node;
+        return temp;
+    }
+    
+    // 오른쪽 서브트리에 불균형이 있는 경우 -> left rotate
+    public Node<E> leftRotate(Node<E> node){
+        Node<E> temp = node.right;
+        node.right = temp.left;
+        temp.left = node;
+        return temp;
+    }
+```
+
+* __트리가 한 쪽으로 치우치지 않은 경우__
+1. __오른쪽 자식의 왼쪽 서브트리__ 에서 불균형이 발생한 경우
+
+<img src="https://cphinf.pstatic.net/mooc/20210430_88/1619718643248TWX2G_PNG/mceclip0.png">
+
+* 위의 경우엔 __부모 노드에 대해서 right rotation__ 하고, __grandparent 노드를 left rotation__ 해서 해결.
+
+2. __ 왼쪽 자식의 오른쪽 서브트리__ 에서 불균형이 발생한 경우
+
+<img src="https://cphinf.pstatic.net/mooc/20210430_88/1619718804552Qh7HW_PNG/mceclip1.png">
+
+* 위의 경우엔 __부모 노드에 대해서 left rotation__ 하고, __grandparent 노드를 right rotation__ 해서 해결.
+
+```java
+    // 오른쪽 자식의 왼쪽 서브트리에 불균형이 있는 경우 -> 부모 노드에 대해서 right rotation, 조부모 노드를 left rotation
+    public Node<E> rightLeftRotate(Node<E> node){
+        node.right = rightRotate(node.right);
+        return leftRotate(node);
+    }
+    
+    // 왼쪽 자식의 오른쪽 서브트리에 불균형이 있는 경우 -> 부모 노드에 대해서 left rotation, 조부모 노드를 right rotation
+    public Node<E> leftRightRotate(Node<E> node){
+        node.left = leftRotate(node.left);
+        return rightRotate(node);
+    }
+```
+
+### 8일차 공부를 하며 느낀 점.
+* 트리 자료구조에 대해서 배우면서 포인터에 대한 개념이 조금씩 더 와닿는 것 같다.
+* 조금은 복잡할 수 있는 개념(우측회전, 좌측회전)과 같은 개념들을 천천히 코드로 작성하며 익히니 더 잘 이해할 수 있었음.
+
+## 9일차 - AVL 트리
+### 1. AVL 트리 개념
+* AVL 트리는 __스스로 균형을 잡는 ```자가 균형 트리```__ 이다. AVL 트리에서는 __왼쪽과 오른쪽의 높이 차이가 항상 1보다 작거나 같아야 함.__
+<img src="https://cphinf.pstatic.net/mooc/20210430_169/1619719441354fPiUS_PNG/mceclip0.png">
+
+### 2. AVL 트리 : 노드
+* AVL 트리의 노드는 __data와 left,right 포인터와 동시에 parent 포인터를 가짐.__
+```java
+    public class Node<T> {
+        T data;
+        Node<T> left;
+        Node<T> right;
+        Node<T> parent;
+        public Node(T data){
+            this.data = data;
+            left = right = parent = null;
+        }
+    }
+```
+
+### 3. AVL 트리 : add 메서드
+* __사용자가 호출하는 메서드__
+    ```java
+    public void add(E obj){
+        Node<E> newNode = new Node<>(obj);
+        // 트리가 비어있을 경우 root에 새로운 노드 대입
+        if(root == null){
+            root = newNode;
+            currentSize++;
+            return;
+        }
+        // 일반적인 경우에 재귀 add 메서드를 호출
+        add(root,newNode);
+    }
+    ```
+* __재귀 add 메서드__
+    ```java
+    private void add(Node<E> parent, Node<E> newNode){
+        // 새로운 노드가 기존 노드보다 큰 경우 -> 오른쪽 자식으로
+        if(((Comparable<E>)newNode.data).compareTo(parent.data) > 0){
+            // 오른쪽 자식이 없는 경우 -> 오른쪽 자식에 새로운 노드
+            if(parent.right == null){
+                parent.right = newNode;
+                newNode.parent = parent;
+                currentSize++;
+            }
+            // 오른쪽 자식이 있는 경우 -> 오른쪽 자식과 add 메서드
+            else add(parent.right, newNode);
+        }
+        // 새로운 노드가 기존 노드보다 작거나 같은 경우 -> 왼쪽 자식
+        else {
+            if(parent.left == null){
+                parent.left = newNode;
+                newNode.parent = parent;
+                currentSize++;
+            }
+            else add(parent.left, newNode);
+        }
+        // 노드를 추가한 뒤에는 균형이 맞는지 확인
+        checkBalance(newNode);
+    }
+    ```
+### 4. AVL 트리 : 균형 확인 메서드
+* AVL 트리에서는 왼쪽과 오른쪽의 높이 차이가 1을 초과해서는 안되는 규칙을 항상 만족해야 한다. 
+* 따라서, 노드를 추가했을 떄, 규칙을 벗어날 경우 ```회전```을 이용해서 균형을 맞춰야 한다.
+* 그렇기 위해선 트리의 __높이 차이를 확인하고, 균형을 맞추는 ```checkedBalance 메서드가 필요__
+    ```java
+    private void checkBalance(Node<E> node){
+        // 해당 지점에서 균형이 맞지 않을 경우 그 노드를 기준으로 reBalance 진행
+        (height(node.left) - height(node.right) > 1 || height(node.left) - height(node.right) < -1) rebalance(node);
+        
+        // 해당 지점이 정상인 경우 부모로 올라가서 다시 균형 확인 (루트까지 진행)
+        if(node.parent == null) return;
+        checkBalance(node.parent);
+    }
+    ```
+
+### 5. AVL 트리 : rebalance 메서드
+* rebalance 메서드에선 __어느 쪽에서 불균형이 발생했는지 확인하고 회전하여 균형을 맞춤__
+    ```java
+    public void rebalance(Node<E> node){
+        // 왼쪽 자식 > 오른쪽 자식
+        if(height(node.left) - height(node.right) > 1){
+            if(height(node.left.left) > height(node.left.right)) { rightRotate(node); } // 왼쪽 서브트리 > 오른쪽 서브트리 -> right rotate
+            else { leftRightRotate(node); } // 오른쪽 서브트리 > 왼쪽 서브트리 -> left-right rotate
+        }
+        // 오른쪽 자식 > 왼쪽 자식
+        else {
+            if(height(node.right.left) > height(node.right.right)) { leftRightRotate(node); }// 왼쪽 서브트리 > 오른쪽 서브트리 -> right-left rotate
+            else { leftRotate(node); }
+        }
+        // 루트가 올 때까지 반복
+        if(node.parent == null) root = node;
+    }
+    ```
+
+    
