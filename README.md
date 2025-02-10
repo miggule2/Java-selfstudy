@@ -1761,4 +1761,151 @@ public class Node<E> {
     }
     ```
 
+## 10일차 - Red Black Tree
+### 1. Red Black Tree : 소개
+* ```Red Black Tree```는 자가 균형 이진 탐색 트리로서 다음의 규칙에 따라 균형을 맞춘다.
+  1. 모든 루트는 검정색 or 빨간색이다.
+  2. 루트는 항상 검은색이다.
+  3. 새로운 노드는 항상 빨간색이다.
+  4. __루트에서 리프까지의 모든 경로의 검정색 노드 개수는 같아야 한다.__
+  5. __어떤 경로에도 빨간색 노드가 2개 연속으로 있어서는 안 된다.__
+  6. 빈 노드는 검정색이라고 가정한다.
+  
+* 규칙 위반했을 때 균형을 맞추기 위한 방법
+    * 이모 노드가 검정색인 경우 -> __회전 -> 부모 노드는 검정색, 자식 노드는 빨간색이 되어야 한다.__
+    * 이모 노드가 빨간색인 경우 -> __색상 전환 -> 부모 노드는 빨간색, 자식 노드는 검정색이 되어야 한다.__
+  
+<img src="https://cphinf.pstatic.net/mooc/20210430_97/16197213821273KHVs_PNG/mceclip0.png">
+
+* Q&A
+  * Q) 레드 블랙 트리에서 검은색 노드 2개가 연속으로 있는 경우는 가능한가요?
+  * A) 검정색 노드가 2개 연속된 경우는 상관없이 가능하다.
+
+### 2. Red Black Tree : 클래스
+* 일반 트리에서 노드의 색을 나타내는 ```black```불리언 변수, 나중에 계산의 편의를 위한 ```isLeftChild```불리언 변수를 추가한다.
+    ```java
+    public class RedBlackTree<K,V>{
+        Node<K,V> root;
+        int size;
+        class Node<K,V>{
+            K key;
+            V value;
+            Node<K,V> left,right,parent;
+            boolean isLeftChild, black;
+            public Node(K key, V value){
+                this.key = key;
+                this.value = value;
+                left = right = parent = null;
+                isLeftChild = false;
+                black = false;
+            }
+        }
+    }
+    ```
+* Q&A
+* Q) isLeftChild가 참이면 이모 노드는 어떻게 찾을 수 있나요?
+* A) node.parent.isLeftChild -> node.parent.parent.right / !node.parent.isLeftChild -> node.parent.parent.left
+
+### 3. Red Black Tree : add 메소드
+```java
+// 사용자가 호출하는 add 메서드
+public void add(K key, V value){
+    Node<K,V> newNode = new Node<>(key, value);
+    if(root == null) {
+        root = newNode;
+        root.black = true;
+        size++;
+        return;
+    }
+    add(root,newNode);
+    size++;
+}
+
+// 실직적으로 실행되는 add 메서드
+private void add(Node<K,V> parent, Node<K,V> newNode){
+    // 새 노드가 부모보다 큰 경우
+    if(((Comparable<K>)newNode.key).compareTo(parent.key) > 0){
+        // 부모의 오른쪽 자식이 비어있는 경우
+        if(parent.right == null){
+            parent.right = newNode;
+            newNode.parent = parent;
+            newNode.black = false; // 새로운 노드는 항상 빨간색
+            newNode.isLeftChild = false; // 새로운 노드는 부모의 오른쪽 자식
+            checkColor(newNode); // 최종적으로 들어갈 때, 트리의 균형 확인
+        }
+        add(parent.right,newNode);  // 자식이 비어있는 경우가 나올 때까지 내려감
+        return;
+    }
+    // 부모의 왼쪽 자식이 비어있는 경우
+    if(parent.left == null){
+        parent.left = newNode;
+        newNode.parent = parent;
+        newNode.black = false;
+        newNode.isLeftChild = true; // 새로운 노드는 부모의 왼쪽 자식
+        checkColor(newNode);  // 최종적으로 들어갈 때, 트리의 균형 확인
+    }
+    add(parent.left,newNode);  // 자식이 비어있는 경우가 나올 때까지 내려감
+}
+```
+* Q&A
+  * Q) checkColor 메소드는 왜 필요한가요?
+  * A) red black tree는 자가 균형 트리이기 때문에, 노드를 추가할 때마다 균형을 맞춰줘야 하기 때문
+
+### 4. Red Black Tree : 색상 확인 메소드
+* 규칙에 어긋난 노드가 있는 경우 균형을 맞추기 위한 메서드
+    ```java
+    // node.parent를 타고 올라가며 루트까지 균형 체크
+    public void checkColor(Node<K,V> node) {
+        // 루트까지 도달한 경우에 루트는 항상 black이기 때문에 설정해주고 return
+        if(node == root){
+            node.black = true;
+            return;
+        }
+        
+        // 빨간색 노드가 두 번 연속될 경우
+        if(!node.black && !node.parent.black){
+            correctTree(node);
+        }
+        
+        // 부모까지 타고 올라가서 체크
+        checkColor(node.parent);
+    }
+
+    public void correctTree(Node<K,V> node){
+        // 이모노드의 색에 따라 대처가 달라지기에 이모노드를 먼저 찾아야 함.
+        // 부모가 왼쪽 자식인 경우
+        if(node.parent.isLeftChild){
+            // 조부모의 오른쪽 자식이 비어있거나(검정색으로 가정), 검정색인 경우 -> 회전
+            if(node.parent.parent.right == null || node.parent.parent.right.black){
+                rotate(node);
+                return;
+            }  
+            // 조부모의 오른쪽 자식이 빨간색인 경우 -> 색상 전환
+            if(node.parent.parent.right != null){
+                node.parent.black = true;
+                node.parent.parent.black = false;
+                node.parent.parent.right.black = true;
+                return;
+            }
+        }
+        // 부모가 오른쪽 자식인 경우
+        else {
+            // 조부모의 왼쪽자식이 비어있거나(검정색으로 가정), 검정색 인 경우 -> 회전
+            if (node.parent.parent.left == null || node.parent.parent.left.black) {
+                rotate(node);
+                return;
+            }
+            // 조부모의 왼쪽 자식이 빨간색인 경우 -> 색상 전환
+            if (node.parent.parent.left != null) {
+                node.parent.black = true;
+                node.parent.parent.black = false;
+                node.parent.parent.left.black = true;
+                return;
+            }
+        }
+    }
+    ```
+* Q&A
+  * Q) correctTree 메소드는 어떤 일을 하나요?
+  * A) 트리에 균형이 맞지 않을 경우, 이모노드의 색에 따라 회전 혹은 색상 전환을 진행하여 Red Black Tree의 균형을 찾는 메서드
     
