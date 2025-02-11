@@ -1909,3 +1909,126 @@ private void add(Node<K,V> parent, Node<K,V> newNode){
   * Q) correctTree 메소드는 어떤 일을 하나요?
   * A) 트리에 균형이 맞지 않을 경우, 이모노드의 색에 따라 회전 혹은 색상 전환을 진행하여 Red Black Tree의 균형을 찾는 메서드
     
+### 5. Red Black Tree : rotate 메서드
+* 현재 노드와 현재 노드의 부모 노드의 위치에 따라 필요한 회전이 달라진다.
+    ```java
+    public void rotate(Node<K,V> node){
+        // 현재 노드가 왼쪽 자식
+        if(node.isLeftChild){
+            // 왼쪽자식의 왼쪽 서브트리
+            if(node.parent.isLeftChild){
+                rightRotate(node.parent.parent); // 조부모 노드에 대해 rightRotate
+                // Red Black Tree는 회전 후에는 부모노드는 검정색, 자식 노드들은 빨간 노드로 처리.
+                node.black = false;
+                node.parent.black = true;
+                if(node.parent.right != null) node.parent.right.black = false; // node,parent.right에 대한 판별은 필요없어보임.
+                return;
+            }
+            // 왼쪽자식의 오른쪽 서브트리
+            leftRightRotate(node.parent.parent); // 조부모 노드에 대해 leftRightRotate
+            node.black = true;
+            node.left.black = false;
+            node.right.black = false;
+            return;
+        } else {
+            // 오른쪽 자식의 왼쪽 서브트리
+            if(node.parent.isLeftChild){
+                rightLeftRotate(node.parent.parent); // 조부모 노드에 대해 rightleftRotate
+                node.black = true;
+                node.left.black = false;
+                node.right.black = false;
+                return;
+            }
+            // 오른쪽 자식의 오른쪽 서브트리
+            leftRotate(node.parent.parent); // 조부모 노드에 대해 leftRotate
+            node.black = false;
+            node.parent.black = true;
+            node.parent.left.black = false;
+            return;
+        }
+    }
+    ```
+  
+### 6. Red Black Tree : leftRotate
+* 이때까지 배운 leftRotate와 유사하지만, ```parent 포인터```와 ```isLeftPointer```가 추가되었기 때문에, 이를 고려해줘야 한다.
+    ```java
+    public void leftRotate(Node<K,V> node){
+        Node<K,V> temp = node.right;
+        node.right = temp.left;
+
+        // temp.left가 node.right로 들어감.
+        if(node.right != null){
+            node.right.parent = node;
+            node.right.isLeftChild = false;
+        }
+        // 조부모 노드가 루트인 경우
+        if(node.parent == null){
+            root = temp;
+            temp.parent = null;
+        }
+        // 주부모 노드가 루트가 아닌 경우
+        else {
+            temp.parent = node.parent;
+            if(node.isLeftChild){
+                temp.parent.left = temp;
+                temp.isLeftChild = true;
+            } else {
+                temp.parent.right = temp;
+                temp.isLeftChild = false;
+            }
+        }
+        temp.left = node;
+        node.parent = temp;
+        node.isLeftChild = true;
+    }
+    ```
+* rightRotate는 leftRotate와 반대로만 진행해주면 된다.
+
+### 7. Red Black Tree : leftRightRotate 메소드
+* RedBlackTree에서의 __left,right Rotate__ 는 조부모의 부모와의 연결까지 했기 때문에, 앞서 배운 leftRightRotate보다 간단하다.
+    ```java
+    public void leftRightRotate(Node<K,V> node){
+        leftRotate(node.left);
+        rightRotate(node);
+    }
+    ```
+* rightLeftRotate는 반대로 진행해주면 된다.
+
+### 8. Red Black Tree : height 메소드
+```java
+    public int height(){
+        if(root == null) return 0;
+        return height(root)-1; // root에서 넘어올 때 +1 되기 때문에 -1 해줘야 함.
+    }
+    // height 메서드 오버로딩 (재귀 메서드)
+    // left든 right든 가장 긴 경로의 길이를 구할 수 있음.
+    public int height(Node<K,V> node){
+        if(node == null) return 0;
+        int leftHeight = height(node.left)+1;
+        int rightHeight = height(node.right)+1;
+
+        if(leftHeight > rightHeight){return leftHeight;}
+        return rightHeight;
+    }
+```
+
+### 9. Red Black Tree : 검정색 노드의 개수
+* Red Black Tree의 규칙 중에는 루트에서 리프까지의 모든 경로의 검정색 노드 개수가 같아야 한다는 규칙이 있다.
+* 이를 확인하기 위한 메서드
+    ```java
+    public int blackNodes(Node<K,V> node){
+        if(node == null) return 0;
+        int rightBlackNodes = blackNodes(node.right);
+        int leftBlackNodes = blackNodes(node.left);
+
+        // RedBlackTree의 규칙을 위반하는 경우(루트에서 리프까지의 경로까지 블랙노드의 수가 다른 경우) 발생 -> 오류 발생 or 해결
+        if(leftBlackNodes != rightBlackNodes){
+            // error 발생
+            // 해결
+        }
+
+        // 현재 노드가 검정색이면 leftBlackNode++;
+        if(node.black) leftBlackNodes++;
+        return leftBlackNodes;
+    }
+    ```

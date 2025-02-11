@@ -48,7 +48,7 @@ public class AVLTree<E> {
     }
 
     private void checkBalance(Node<E> node){
-        (height(node.left) - height(node.right) > 1 || height(node.left) - height(node.right) < -1) rebalance(node);
+        if(height(node.left) - height(node.right) > 1 || height(node.left) - height(node.right) < -1) rebalance(node);
 
         if(node.parent == null)
             return;
@@ -96,5 +96,19 @@ public class AVLTree<E> {
         }
         // 루트가 올 때까지 반복
         if(node.parent == null) root = node;
+    }
+
+    public int height(){
+        if(root == null) return 0;
+        return height(root)-1;
+    }
+
+    public int height(Node<E> node){
+        if(node == null) return 0;
+        int leftHeight = height(node.left)+1;
+        int rightHeight = height(node.right)+1;
+
+        if(leftHeight > rightHeight){return leftHeight;}
+        return rightHeight;
     }
 }
