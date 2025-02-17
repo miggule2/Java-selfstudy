@@ -2088,3 +2088,116 @@ public void insertionSort(int[] arr){
 * __불안정 정렬__
 * __In-place 정렬__
 * __시간복잡도__ : 최악의 경우는 ```O(N^2)```이 되고, __평균적인 시간복잡도는 간격의 크기에 따라 달라짐__
+
+### 5. 병합 정렬(Merge sort)
+* 정의 : __요소가 하나만 남을 때까지 나눈 후, 나눴던 리스트를 대소 관계에 맞게 다시 합치는 방법__ 의 정렬
+* __stable sort__
+* __out-of-place sort__
+* __시간복잡도__ : ```O(nlogn)```
+```java
+public class MergeSort {
+    int[] array,temp;
+    public MergeSort(int[] array) {
+        this.array = array;
+        // 빈 배열을 만들어 중간중간 병합되는 배열들을 일시적으로 저장
+        temp = new int[array.length];
+        split(0,array.length-1);
+    }
+
+    // 리스트에 하나만 남을 때까지 split
+    public void split(int low, int high){
+        if(low == high) return;
+        int mid = (low+high)/2;
+        split(low,mid);
+        split(mid+1,high);
+        merge(low,mid,high);
+    }
+
+    // 쪼개진 두 배열을 병합&정렬
+    private void merge(int low, int mid, int high){
+        int i = low, j = mid+1, tempPos = low;
+        // 두 쪼개진 리스트의 요소를 각각 비교하면서 병합
+        while(i <= mid && j <= high){
+            if(array[i] <= array[j]){
+                temp[tempPos++] = array[i++];
+            } else{
+                temp[tempPos++] = array[j++];
+            }
+        }
+        // 쪼개진 두 배열 중 남은 요소들을 temp에 저장
+        while(i <= mid)  temp[tempPos++] = array[i++];
+        while(j <= high) temp[tempPos++] = array[j++];
+        // 원래 배열에 정렬된 배열 복사
+        for(tempPos = low; tempPos <= high; tempPos++){
+            array[tempPos] = temp[tempPos];
+        }
+    }
+
+    public int[] getArray(){
+        return array;
+    }
+}
+```
+
+### 6. 퀵 정렬
+* __정의__ : __중심점(pivot)을 임의로 고른 후, pivot보다 작은 건 왼쪽, 큰 건 오른쪽으로 분류하는 걸 반복하여 정렬하는 방법.__
+* Python,C,C++의 표준 라이브러리에서 사용하는 정렬 알고리즘. 모든 종류의 변수에 대해서 사용 가능.
+* pivot을 기준으로 정리한 뒤, pivot 왼쪽의 값들과 오른쪽 값들은 비교할 필요가 없음 -> 시간적으로 효율적
+   
+ 
+* __과정__
+  1. pivot을 선택. 보통 중간값이나 마지막 값을 선택.
+  2. 마지막 요소와 pivot의 위치를 변경.
+  3. 2개의 카운터를 이용하여 리스트를 처음부터 탐색. 첫번째 포인터는 pivot보다 큰 숫자의 위치를 저장. 두번째 보인터는 현재 탐색중인 위치 저장.
+  4. 탐색하며 pivot보다 작은 숫자가 나온 경우, 첫번째 카운터와 위치를 바꾸고 첫번째 카운터를 증가시킴.
+  5. 탐색을 진행하면 pivot보다 큰 수와 작은 수로 나눠짐.
+  6. pivot을 첫번쨰 포인터와 교체함.
+  7. 2~6을 pivot 왼쪽과 오른쪽 배열에 반복.
+
+* __stable sort__
+* __in-place sort__
+* __시간복잡도__ : 평균(```O(nlogn)```), 최악(```O(n^2)```)
+
+```java
+public class QuickSort<E> {
+    E[] array;
+
+    public QuickSort(E[] array) {
+        this.array = array;
+        quicksort(0,array.length-1);
+    }
+    // 위치 바꿔주는 함수
+    private void swap(int i, int j) {
+        E temp = array[i];
+        array[i] = array[j];
+        array[j] = temp;
+    }
+    // 퀵정렬
+    public void quicksort(int from, int to) {
+        // 정렬 종료 조건
+        if(from >= to) return;
+        // pivot을 배열의 마지막 숫자로 선택
+        E pivot = array[to];
+        // pivot보다 큰 숫자를 가리키는 포인터
+        int counter = from;
+        // pivot 바로 앞까지 탐색
+        for(int i = from; i < to; i++) {
+            // pivot보다 작은 경우 pivot보다 큰 숫자의 자리와 교체
+            if(((Comparable<E>)array[i]).compareTo(pivot) < 0){
+                swap(counter,i);
+                counter++;
+            }
+        }
+        // pivot이 작은값과 큰값 중간에 오도록 위치.
+        swap(counter,to);
+        // pivot 왼쪽과 오른쪽에 동일한 과정 시행
+        // pivot의 왼쪽과 오른쪽은 비교할 필요가 없음.
+        quicksort(from,counter-1);
+        quicksort(counter+1,to);
+    }
+
+    public E[] getArray(){
+        return array;
+    }
+}
+```
