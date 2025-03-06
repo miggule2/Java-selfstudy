@@ -52,7 +52,7 @@
 4. ```localhost:8080/nana.txt```로 접속하면 홈디렉토리에 있는 ```nana.txt```문서를 웹에서 볼 수 있음.
 <img src="./images/web_nana.png">
 
-### 2. context 사이트 추가
+## 2. context 사이트 추가
 * 위의 방법처럼 홈 디렉토리를 기준으로 여러 하위 디렉토리를 만들어 웹 애플리케이션을 관리할 수도 있지만, 그렇게 하게되면 __개발의 불편함과 너무 규모가 커지는 문제__ 등의 문제들이 발생한다.
 * 그래서 웹 서버에서는 __context를 나누어 규모가 커지는 웹 애플리케이션을 효율적으로 관리__ 함.
 * __Context 분리의 추가적인 장점__
@@ -60,7 +60,7 @@
   * __모듈화 및 관리 용이성__: 대규모 웹 애플리케이션을 기능별, 모듈별로 Context로 분리하여 개발 및 관리를 효율적으로 할 수 있음.
   * __재배포 용이성__: 특정 Context만 수정하거나 재배포해야 할 경우, 전체 서버를 재시작할 필요 없이 해당 Context만 재배포하면 됨.
 
-### 3. Annotation을 이용한 URL 매핑
+## 3. Annotation을 이용한 URL 매핑
 ```java
 @WebServlet("/hello")
 ```
@@ -74,7 +74,7 @@
 * 어노테이션으로 URL 매핑을 진행하려면 ```web.xml```파일의 ```metadata-complete``` 값을 ```false```로 변경해줘야 한다.
 * 위의 설정을 통해 __web.xml외에 어노테이션 기반의 매핑도 사용하겠다는 의미__ 이다.
 
-### 4. 컨텐츠 출력 형식 지정하기
+## 4. 컨텐츠 출력 형식 지정하기
 ### MIME 타입 명시
 ```java
 @WebServlet("/hello")
@@ -190,3 +190,75 @@ public class Nana extends HttpServlet{
 9: 안녕 Servlet!
 ...
 ```
+
+## 5. 사용자 요청 받기
+### __GET 요청__
+* 사용자가 구체적으로 무엇을 달라는 요청을 할 수 있음.
+  * https://localhost/hi -> ```get 요청```
+  * https://localhost/hi __?cnt=3__ -> ```get 요청```
+* 위의 요청에서 ```?cnt=3``` 부분을 ```QueryString```이라고 한다.
+* __```QueryString```을 통해 클라이언트는 서버에 사전에 협의된 형식으로 원하는 특정 데이터를 요청할 수 있음.__
+```java
+int cnt = Integer.parseInt(req.getParameter("cnt"));
+		
+for(int i = 0; i < cnt; i++) {
+    out.println((i+1) + ": 안녕 Servlet!<br >");
+}
+```
+* ```req.getParameter("cnt")``` 다음의 코드로 ```QueryString```에서 cnt 값을 받을 수 있고,
+* 이를 정수로 바꾸어 cnt 개수만큼 출력할 수 있다.  
+
+<img src="./images/QueryStringResult_0316.png">
+
+### __QueryString 기본값 설정__
+* 만약 클라이언트가 QueryString을 빼먹는 실수를 하면 어떻게 될까?  
+ 
+
+* 요청
+```
+URL : https://localhost/hi
+```
+* 결과  
+
+<img src="./images/NullPointerException_0316.png">
+
+* 그래서 위의 경우를 미리 생각하여 __기본값을 설정__ 할 수 있다.
+  * https://localhost/hi?cnt=3 -> ```cnt = "3"```
+  * https://localhost/hi?cnt=  -> ```cnt = ""``` -> __기본값 설정 필요__
+  * https://localhost/hi?      -> ```NULL``` -> __기본값 설정 필요__
+  * https://localhost/hi -> ```NULL``` -> __기본값 설정 필요__
+```java
+String cnt_ = req.getParameter("cnt");
+int cnt = 100;
+if(cnt_ != null && cnt_.equals("")) {
+    cnt = Integer.parseInt(cnt_);
+}
+```
+* 위의 코드로 QueryString이 제대로 들어오지 않았을 경우 기본값 100이 설정되도록 함.
+
+### __사용자 입력을 통한 GET 요청__
+```html
+<body>
+<div>
+  <form action = "hi">  -> URL 작성 ( http://.../hi )
+    <div>
+      <label>"안녕하세요를 몇 번 듣고 싶으세요?</label>
+    </div>
+    <div>
+      <input type="text" name = "cnt"/>  -> QueryString 생성 ( http://.../hi?cnt=3 ) 
+      <input type="submit" value = "출력" />
+    </div>
+  </form>
+</div>
+</body>
+```
+* ```hello.html``` 페이지를 만들어 cnt 값을 입력받음
+  * form의 ```action 태그```를 사용해 기본적인 URL을 생성
+  ```html
+  <form action = "hi">  -> URL 작성 ( http://.../hi )
+  ```
+  * input의 ```name 태그```에 QueryString의 키 값을 설정하고, 사용자에게 대응하는 값을 입력 받음.
+  ```html
+  <input type="text" name = "cnt"/>  -> QueryString 생성 ( http://.../hi?cnt=3 )
+  ```
+* 결론적으로 입력받은 cnt 값을 바탕으로 위에서 미리 작성한 servlet을 사용해 클라이언트에게 출력.
