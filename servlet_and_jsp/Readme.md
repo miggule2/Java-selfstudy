@@ -262,3 +262,102 @@ if(cnt_ != null && cnt_.equals("")) {
   <input type="text" name = "cnt"/>  -> QueryString 생성 ( http://.../hi?cnt=3 )
   ```
 * 결론적으로 입력받은 cnt 값을 바탕으로 위에서 미리 작성한 servlet을 사용해 클라이언트에게 출력.
+
+### __POST 요청__
+* GET으로 요청을 받을 경우 일반적으로 URL에 요청정보가 담기기 때문에 __URL 길이 제한과 보안 문제__ 가 발생할 수 있다.
+* 이 경우 __POST__ 로 입력 받을 수 있다.    
+* __POST__ 방식은 GET 방식보다 더 많은 정보를 받을 수 있고, 보안성도 더 좋다.   
+
+
+* POST 요청의 일반적인 요청 방식 예시
+```
+    클라이언트                         웹서버
+햄버거 주문서 주세요 ---GET 요청--> 
+햄버거 상세 주분 내역 ---POST 요청-->   요청 처리
+                   <----햄버거---
+```
+
+* 그에 대응하는 servlet 코드
+```java
+@WebServlet("/notice-reg")
+public class NoticeReg extends HttpServlet{
+	@Override
+	protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		// TODO Auto-generated method stub
+		resp.setCharacterEncoding("UTF-8");
+		resp.setContentType("text/html; charset=UTF-8");
+		
+		PrintWriter out = resp.getWriter();
+		
+		String titleString = req.getParameter("title");
+		String contentString = req.getParameter("content");
+		
+		out.println(titleString);
+		out.println(contentString);
+	}
+}
+```
+### 한글 입력 문제
+* 위의 코드대로 브라우저에서 한글을 입력 받아 그대로 출력하면
+```
+hello ìëíì¸ì
+```
+* 다음과 같이 한글 깨짐 문제가 발생.
+* 더 자세하게 __멀티 바이트 문자(한글) 전송 문제__ 가 발생.
+    
+ 
+* 이를 해결하기 위해 __웹서버 측에서도 요청받은 값을 UTF-8 인코딩 방식으로 변환하도록 처리__ 해줘야 한다.
+* 크게 두가지 방법이 있는데, __1. 웹서버 자체의 설정 변경__ __2. servlet 파일에서 따로 인코딩 방식 처리__    
+ 
+
+* 2번째 방법으로 해결
+```java
+request.setCharacterEncoding("UTF-8");
+```
+
+### 서블릿 필터(Servlet filter)
+* ```서블릿 필터```는 웹 애플리케이션에서 클라이언트 요청과 서버의 응답을 가로채서 처리할 수 있는 재사용 가능한 컴포넌트.
+* 서블릿 컨테이너에 의해 관리되며, __서블릿이나 자원에 접근하기 전후에 특정 작업을 수행 가능.__    
+
+
+* 위의 특성을 통해 __한글 입력 문제__ 를 해결하기 위해 모든 서블릿 코드에 코드를 삽입하는 것이 아닌 __필터를 사용해 모든 서블릿 코드에서 UTF-8 방식으로 인코딩 변환하도록 처리할 수 있음.__
+```java
+public class CharacterEncodingFilter implements Filter {
+
+	@Override
+	public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain)
+			throws IOException, ServletException {
+		request.setCharacterEncoding("UTF-8"); // 서블릿 실행 이전에 요청의 인코딩 방식을 UTF-8로 설정
+        
+		chain.doFilter(request, response); // 기준으로 이전엔 서블릿 실행 이전에 처리 혹은 이후에 처리로 나뉨
+        
+	}
+
+}
+```
+    
+ 
+* 해당 필터를 적용하기 위해 __1. web.xml에 명시 2.annotation 사용__
+1. web.xml에 명시
+    ```xml
+   <web-app ...
+     
+    <filter>
+    <filter-name>CharacterEncodingFilter</filter-name>
+    <filter-class>com.newlecture.web.filter.CharacterEncodingFilter</filter-class>
+    </filter>
+    <filter-mapping>
+    <filter-name>CharacterEncodingFilter</filter-name>
+    <url-pattern>/*</url-pattern>
+    </filter-mapping>
+     
+     ...
+    </web-app>
+    ```
+
+2. 서블릿 코드에 어노테이션으로 설정 (요즘 선호되는 방식)
+    ```java 
+   @WebFilter("/*")
+    ```
+   
+* __위와 같이 서블릿 코드를 작성하고, 필터를 적용하면 모든 url 요청에 대해서 인코딩 방식을 UTF-8로 적용 가능.__
