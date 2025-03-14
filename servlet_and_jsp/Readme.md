@@ -361,3 +361,154 @@ public class CharacterEncodingFilter implements Filter {
     ```
    
 * __위와 같이 서블릿 코드를 작성하고, 필터를 적용하면 모든 url 요청에 대해서 인코딩 방식을 UTF-8로 적용 가능.__
+
+## 6. 과제 (입력한 결과 계산하여 출력하기)
+### 사용자 입력을 통한 계산 요청
+```
+      클라이언트                             웹서버
+계산 입력을 위한 폼을 주세요 -----GET---->  
+                           <---HTML----  
+입력                       -----POST--->  add문서 생성
+                          <-------------
+```
+
+* __HTML코드__
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+	<div>
+		<form action="add" method = "post">
+			<div><label>계산할 값을 입력하세요</label></div>
+			<div><input type="text" name="x"><input type="text" name="y"></div>
+			<div><input type="submit" value="sum" name="sum"></div>
+		</form>
+	</div>
+</body>
+</html>
+```
+
+* __servlet 코드__
+```java
+...
+
+@WebServlet("/add")
+public class Add extends HttpServlet {
+	@Override
+	protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException{
+		resp.setCharacterEncoding("UTF-8");
+		resp.setContentType("text/html; charset=UTF-8");
+		
+		PrintWriter out = resp.getWriter();
+		
+        // 사용자에게 받은 값들
+		String x_String = req.getParameter("x"); // input의 name 속성과 동일한 input의 값.
+		String y_String = req.getParameter("y");
+		
+        // 사용자에게 받은 값들이 숫자인지 판별
+		if(x_String.matches("[+-]?\\d*(\\.\\d+)?") && y_String.matches("[+-]?\\d*(\\.\\d+)?")) {
+			int x = Integer.parseInt(x_String);
+			int y = Integer.parseInt(y_String);
+			
+			out.println("계산 결과 : " + (x+y));
+		}
+        // 숫자가 아닌 경우 입력 오류 출력
+		else {
+			out.println("입력 오류");
+		}
+	}
+}
+```
+* 입력 폼
+
+<img src="./images/add_html.png">
+
+* 결과
+
+<img src="./images/add_result.png">
+
+### 여러가지 submit버튼 사용하기
+* 사용자에게 동일하게 두 값을 입력받지만, 합 or 차 버튼 선택하기
+* __HTML 코드__
+```html
+...
+<div><input type="submit" value="sum" name="button"></div>
+<div><input type="submit" value="sub" name="button"></div>
+...
+```
+* __servlet 코드__
+```java
+...
+String operator = req.getParameter("button"); // input name="button"(두 버튼)에서의 value 값을 받음
+
+if(x_String.matches("[+-]?\\d*(\\.\\d+)?") && y_String.matches("[+-]?\\d*(\\.\\d+)?")) {
+    int x = Integer.parseInt(x_String);
+    int y = Integer.parseInt(y_String);
+    
+    // operator 값에 따라 합 또는 차를 출력
+    if(operator.equals("sum")) out.println("계산 결과 : " + (x+y));
+    else if(operator.equals("sub")) out.println("뺄셈 결과 : " + (x-y));
+    ...                            
+
+```
+* 버튼이 두 개 이상일 경우 __name 속성의 값은 같게 하고, value 값을 다르게 하여 값을 구별__   
+
+
+* 입력 폼  
+<img src="./images/calc_html.png">
+
+* 결과  
+<img src="./images/calc_result.png">
+
+### 입력 데이터 배열로 받기
+* 사용자에게 받아야하는 값 중에 입력 받을 개수를 모르는 경우(자격증, 가족관계 ...)가 많다.
+* 이럴 땐, 모든 name 속성의 값을 다르게 하는 것이 아니라, 같게 하여 배열로 받을 수 있다.
+* __HTML 코드__
+```html
+...
+<div>
+  <input type="text" name="num">
+  <input type="text" name="num">
+  <input type="text" name="num">
+  <input type="text" name="num">
+</div>
+...
+```
+* __servlet 코드__
+```java
+...
+String[] num_Strings = req.getParameterValues("num"); // getParameterValues 매서드로 name="num"인 input들의 값을 배열로 받음.
+		
+int result = 0;
+boolean flag = false;
+for(int i = 0; i < num_Strings.length; i++) {
+    // 각각의 값이 숫자인지 판별하고 아닌 경우 반복 중단
+    if(!(num_Strings[i].matches("[+-]?\\d*(\\.\\d+)?"))) {
+        flag = true;
+        break;
+    }
+    
+    int num = Integer.parseInt(num_Strings[i]);
+    result += num;
+    // flag 값이 true인 경우(숫자 아닌게 하나라고 있는 경우) 입력 오류 출력, 아닌 경우 결과 출력 
+    if(flag) { out.println("입력 오류"); }
+        else { out.println("계산 결과 : " + result);}
+}
+        ...
+```
+* html에서 __input의 name 속성 값을 동일하게 하면, servlet에서 ```getParameterValues 매서드```를 이용해 값들을 배열로 받을 수 있음.__
+    
+
+* 입력 폼
+<img src="./images/add2_html.png">
+
+* 결과  
+<img src="./images/add2_result.png">
+
+## 7. 상태 유지가 필요한 경우에서의 구현
+
+
