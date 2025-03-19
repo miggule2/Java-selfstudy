@@ -510,5 +510,196 @@ for(int i = 0; i < num_Strings.length; i++) {
 <img src="./images/add2_result.png">
 
 ## 7. 상태 유지가 필요한 경우에서의 구현
+### 사용자로부터 두 개의 값을 개별적으로 받는 방식
+* __예시__
+```
+     클라이언트
+                ----post---> calc?x=
+                ----post---> calc?x=15
+                ----post---> calc?x=2
+                
+                <---------- 결과 문서 생성
+```
+* 위와 같은 작업을 위해선 사용자로부터 받은 __값(상태)를 유지__ 할 수 있어야 함.
+
+### 상태 유지를 위한 5가지 방법
+1. __servlet Context(application)__
+2. __session__
+3. __cookie__
+4. (hidden)
+5. (queryString)
+
+### 1. servlet Context(application 객체)를 사용한 상태 값 저장
+#### __ServletContext란?__
+* ```servletContext```는 웹 서버가 웹 애플리케이션을 실행할 때, 생성하는 객체로, __웹 애플리케이션 전체를 대표__
+* 웹 애플리케이션 내의 모든 서블릿, 필터, 리스너 등이 공유하여 사용할 수 있는 유일한 객체.
+
+### __ServletContext를 이용한 상태값 저장 예시__
+* __html 코드__
+```html
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+	<div>
+		<form action="calc2" method = "post">
+			<div><label>계산할 값을 입력하세요</label></div>
+			<div><input type="text" name="v"></div>
+			<div>
+				<input type="submit" value="+" name="operator">
+				<input type="submit" value="-" name="operator">
+				<input type="submit" value="=" name="operator">
+			</div>
+		</form>
+	</div>
+</body>
+</html>
+```
+* servlet 코드
+```java
+@WebServlet("/calc2")
+public class Calc2 extends HttpServlet {
+	@Override
+	protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException{
+		ServletContext application = req.getServletContext(); //servlet context 객체를 얻음.
+      
+		resp.setCharacterEncoding("UTF-8");
+		resp.setContentType("text/html; charset=UTF-8");
+		
+		PrintWriter out = resp.getWriter();
+			
+		String v_String = req.getParameter("v");
+		String operator = req.getParameter("operator");
+		
+		int v = 0;
+		if(!v_String.equals("")) v = Integer.parseInt(v_String);
+		
+		int result = 0;
+		
+        // 사용자가 "=" 을 클릭한 경우(계산을 마무리하고 싶은 경우)
+		if(operator.equals("=")) {
+			int x = (Integer)application.getAttribute("value"); // 이전에 입력했던 ServletContext에 저장된 값("value"에 대응되는)을 가져옴.
+			int y = v;
+			
+            // 이전에 입력했던 ServletContext에 저장된 값("operator"에 대응되는)이 뭔지에 따라 달리 계산
+			if(application.getAttribute("operator").equals("+")) {
+				result = x+y;
+			} else {
+				result = x-y;
+			}
+			
+			out.println("계산 결과 : " + result);
+		}
+		
+		else {
+            // 현재 입력된 값(value)과 연산자(operator)를 ServletContext에 저장하여 다음 계산에 사용될 수 있도록 함.
+			application.setAttribute("value", v);
+			application.setAttribute("operator", operator);
+		}
+		
+	}
+}
+```
+* __입력 폼__  
+<img src="./images/ServletContext_html.png">
+<img src="./images/ServletContext_html2.png">
+
+* __결과__   
+<img src="./images/ServletContext_result.png">
+
+### 2. session을 이용한 상태 값 저장
+#### session이란?
+* ```session 객체```는 특정 웹 브라우저(사용자)와 웹 서버 간의 __상태를 유지__ 하기 위해 사용되는 객체.
+* ```session 객체```는 HTTP의 stateless한 환경에서 사용자를 식별하고, 사용자의 활동에 대한 정보를 저장하고 관리.
+
+#### __session 객체를 이용한 상태값 저장 예시__
+* html은 위와 동일   
+ 
+
+* __servlet 코드__
+```java
+@WebServlet("/calc2")
+public class Calc2 extends HttpServlet {
+	@Override
+	protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException{
+		HttpSession session = req.getSession(); // session 객체 가져오기.
+		resp.setCharacterEncoding("UTF-8");
+		resp.setContentType("text/html; charset=UTF-8");
+		
+		PrintWriter out = resp.getWriter();
+			
+		String v_String = req.getParameter("v");
+		String operator = req.getParameter("operator");
+		
+		int v = 0;
+		if(!v_String.equals("")) v = Integer.parseInt(v_String);
+		
+		int result = 0;
+		
+		if(operator.equals("=")) {
+			int x = (Integer)session.getAttribute("value"); // 이전에 입력했던 session에 저장된 값("value"에 대응되는)을 가져옴.
+			int y = v;
+
+          // 이전에 입력했던 session에 저장된 값("operator"에 대응되는)이 뭔지에 따라 달리 계산
+			if(session.getAttribute("operator").equals("+")) {
+				result = x+y;
+			} else {
+				result = x-y;
+			}
+			
+			out.println("계산 결과 : " + result);
+		}
+		
+		else {
+          // 현재 입력된 값(value)과 연산자(operator)를 session에 저장하여 다음 계산에 사용될 수 있도록 함.
+			session.setAttribute("value", v);
+			session.setAttribute("operator", operator);
+		}
+		
+	}
+}
+```
+  
+* 같은 브라우저에서 연속적으로 입력했을 경우 입력폼과 결과는 Context때와 동일   
+
+#### 각기 다른 브라우저에서 입력
+* __입력 폼__   
+<img src="./images/ServletContext_html.png">
+<img src="./images/Session_edge.png">
+
+* __결과__
+<img src="./images/Session_result.png">   
+ 
+
+* 세션은 브라우저마다 존재하기에 __각기 다른 브라우저에서 입력하면 상태값이 저장되지 않음을 확인할 수 있음.__
+
+#### ServletContext와 session의 차이점
+1. __범위(scope)__
+  * __Servlet Context__ : __웹 애플리케이션 전체__ 에 걸쳐 공유되는 객체. 웹 애플리케이션 내의 모든 서블릿,필터,리스너에서 접근 및 공유 가능.
+  * __HttpSession__ : __특정 사용자 (웹 브라우저)를 위한 객체__입니다. 각 사용자마다 고유한 HttpSession이 생성
+
+2. __생명 주기__
+   * __Servlet Context__ : 웹 애플리케이션의 __시작과 종료__를 함께 함.
+   * __HttpSession__ : 사용자가 웹 애플리케이션에 __처음 접근하거나 명시적으로 세션을 생성__ 할 때 생성될 수 있음.
+    
+
+3. __주요 용도 (Primary Use Cases)__
+   * __ServletContext__ :
+     * 애플리케이션 전역 설정: 데이터베이스 연결 정보, 환경 설정 파일 경로 등 애플리케이션 전체에서 공유해야 하는 설정 정보를 저장합니다.
+     * 애플리케이션 통계: 전체 사용자 수, 방문자 수 등 애플리케이션 전체에 대한 통계를 저장합니다.
+   * __HttpSession__ :
+     * 사용자 인증 정보: 로그인한 사용자의 ID, 권한 등 인증 정보를 저장하여 사용자의 로그인 상태를 유지합니다.
+     * 개인화된 사용자 정보: 사용자의 선호도, 설정 등을 저장하여 개인화된 서비스를 제공합니다.
+     * 장바구니 정보: 사용자가 선택한 상품 목록을 저장하여 쇼핑 과정을 관리합니다.
+   
+ 
+4. __비유__
+  * __ServletContext__ : 웹 애플리케이션이라는 __"건물"__ 자체에 비유할 수 있음. 건물에는 모든 사람이 공유하는 로비, 엘리베이터, 공지사항 게시판 등이 있음. 이는 웹 애플리케이션이 공유하는 정보나 자원이 해당.
+  * __HttpSession__웹 애플리케이션을 이용하는 __"개별 방문객"__ 에게 제공되는 개인적인 __"방"__ 에 비유할 수 있음. 각 방문객은 자신의 방에 개인적인 물건이나 정보를 보관할 수 있음.
+
+
 
 
