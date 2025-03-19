@@ -700,6 +700,151 @@ public class Calc2 extends HttpServlet {
   * __ServletContext__ : 웹 애플리케이션이라는 __"건물"__ 자체에 비유할 수 있음. 건물에는 모든 사람이 공유하는 로비, 엘리베이터, 공지사항 게시판 등이 있음. 이는 웹 애플리케이션이 공유하는 정보나 자원이 해당.
   * __HttpSession__웹 애플리케이션을 이용하는 __"개별 방문객"__ 에게 제공되는 개인적인 __"방"__ 에 비유할 수 있음. 각 방문객은 자신의 방에 개인적인 물건이나 정보를 보관할 수 있음.
 
+### 3. cookie를 이용한 상태값 저장
+#### 쿠키란?
+* 쿠키는 웹 서버가 웹 브라우저에 전송하는 __작은 텍스트 파일__
+* 쿠키는 __클라이언트 측에 상태 정보를 저장하고 관리__ 하는데 사용.
 
+#### 쿠키의 특징 및 유의점
+* __쿠키의 보안 문제__ : 쿠키는 클라이언트 측에 저장되기 때문에 보안에 취약할 수 있음. 이를 해결하기 위한 방법으로는 ```HTTPS사용```, ```쿠키 암호화``` 등이 있음.
+* __쿠키의 한계__ : 쿠키에는 용량 제한(약 4KB)이 있고, 클라이언트 측에서 삭제 및 비활성화 할 수 있음.
 
+#### 쿠키 동작 방식
+1. __서버에서 쿠키 생성 및 전송 :
+    ```java
+    Cookie cookie = new Cookie("c",String.valueof(result));
+    response.addCookie(cookie);
+    ```
+   * 위와 같은 코드로 쿠키를 웹 브라우저에게 생성 및 전송
 
+2. __브라우저에 쿠키 저장__ 
+3. __클라이언트 요청 시 쿠키 전송__ : 이후 사용자가 동일한 서버에 다시 요청을 보낼 때, 웹 브라우저는 쿠키를 전송.
+4. __서버에서 쿠키 확인 및 활용__ : 
+    ```java
+    Cookie[] cookies = request.getCookies();
+    String _c = "";
+    
+    if(cookies != null)
+        for(Cookie cookie : cookies)
+            if("c".equals(cookie.getName()))
+                _c = cookie.getValue();
+    ```
+   * 쿠키값들을 배열로 전달받아 필요한 값을 찾아 사용.
+
+#### cookie 값을 이용한 상태값 저장 예시
+* html은 위와 동일    
+ 
+* __servlet 코드__ 
+```java
+@WebServlet("/calc2")
+public class Calc2 extends HttpServlet {
+	@Override
+	protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException{
+		Cookie[] cookies = req.getCookies(); // 쿠키값들 전달받기
+		
+		resp.setCharacterEncoding("UTF-8");
+		resp.setContentType("text/html; charset=UTF-8");
+		
+		PrintWriter out = resp.getWriter();
+			
+		String v_String = req.getParameter("v");
+		String operator = req.getParameter("operator");
+		
+		int v = 0;
+		if(!v_String.equals("")) v = Integer.parseInt(v_String);
+		
+		int result = 0;
+		
+		if(operator.equals("=")) {
+
+			int x = 0;
+            // 쿠키값들 중에 "value"에 해당하는 값 찾기
+			for(Cookie cookie : cookies) {
+				if("value".equals(cookie.getName())) {
+					x = Integer.parseInt(cookie.getValue());
+					break;
+				}
+			}
+			int y = v;
+            // 쿠키값들 중에 "operator"에 해당하는 값 찾기
+			String op = "";
+			for(Cookie cookie : cookies) {
+				if("operator".equals(cookie.getName())) {
+					op = cookie.getValue();
+					break;
+				}
+			}
+			
+			if(op.equals("+")) {
+				result = x+y;
+			} else {
+				result = x-y;
+			}
+			
+			out.println("계산 결과 : " + result);
+		}
+		
+		else {
+            // 쿠키 생성
+			Cookie valueCookie = new Cookie("value",String.valueOf(v));
+			Cookie opCookie = new Cookie("operator", operator);
+            
+            // 부라우저에 쿠키 전송
+			resp.addCookie(valueCookie);
+			resp.addCookie(opCookie);
+		}
+		
+	}
+}
+```
+     
+ 
+* 입력과 결과는 전과 동일
+
+#### 쿠키의 path 옵션
+* 쿠키의 ```path``` 옵션은 쿠키가 __어떤 URL 경로에서 유효한지__ 지정하는 속성.
+1. 모든 도메인에 쿠키 전송
+```java
+valueCookie.setPath("/")
+```
+
+2. notice 하위에 전송
+```java
+valueCookie.setPath("/notice/")
+```
+
+#### 쿠키의 path 옵션 설정 예시
+* 쿠키 servlet 코드에서 다음과 같은 코드 추가
+```java
+valueCookie.setPath("/")
+opCookie.setPath("/")
+```
+
+* 입력   
+<img src="./images/cookiepath_html.png">
+
+* 결과   
+<img src="./images/cookie_path_result2.png">   
+<img src="./images/cookie_path_result.png">  
+
+* __모든 도메인에 쿠키를 전송하는 것을 확인__
+
+#### 쿠키의 maxAge 욥션
+* 쿠키의 ```setAge``` 옵션은 쿠키의 유효 기간을 초 단위로 설정.
+
+#### 쿠키의 maxAge 옵션 설정 예시
+* 쿠키 servlet 코드에서 다음과 같은 코드 추가
+```java
+value.setMaxAge(24*60*60);
+```
+* 총 1일간 쿠키가 유효하도록 설정(```24시간*60분*60초```)
+
+* 입력  
+<img src="./images/cookie_html.png">
+    
+
+* 입력 후 브라우저를 닫았다 다시 켠 경우 결과
+<img src="./images/cookie_maxage_result.png">
+<img src="./images/cookie_maxage_result2.png">
+
+* __cookie 값 두 개 중 value만 남아있는 걸 확인할 수 있음.__
