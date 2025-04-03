@@ -881,3 +881,169 @@ value.setMaxAge(24*60*60);
     ```
   
 * 위의 예시 코드를 추가하면 원래는 나왔던 흰 화면이 아니라 ```calc2.html```파일이 표시됨.
+
+## 9. 동적인 페이지(서버 페이지)의 필요성
+### 동적인 페이지가 필요한 예시
+```
+    브라우저                     웹 서버
+    
+      9입력        ----->       servlet
+                                  ㅣ
+                                  ㅣ
+                 <------         html
+```
+* html에서는 사용자 입력을 반영해서 다시 되돌려 줄 수 없음.(정적인 페이지기 때문)
+
+* __그래서 계산기와 같은 대부분의 사용자 입력 페이지에는 입력 받은 값을 반영해서 돌려줄 수 있는 동적인 페이지가 필수__
+### 동적인 페이지의 필요성
+* __상호작용성__ : 위에서 설명했듯 사용자 입력에 따라 변하는 즉, 상호작용하는 웹 페이지를 만들기 위해서 필요.
+* __데이터 처리__ : 웹 서버에서 데이터를 처리하고 그 결과를 HTML 파일로 생성해서 유기적인 페이지를 만들 수 있음.
+* __실시간 정보 제공__ : 날씨, 시세와 같은 실시간으로 변하는 정보를 보여주는데 동적 페이지는 필요함,
+
+### 실습
+* __코드(동적인 페이지 서블릿)__
+```java
+@WebServlet("/calcpage")
+public class CalcPage extends HttpServlet {
+    @Override
+    protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException{
+        Cookie[] cookies = req.getCookies();
+        String exp = "0"; // 전달 받은 쿠키가 없는 경우, 초기화 한 경우 0 
+        // 전달받은 쿠키가 있는 경우 찾아서 exp에 저장
+        if(cookies != null)
+            for(Cookie cookie : cookies)
+                if("exp".equals(cookie.getName())) {
+                    exp = cookie.getValue();
+                    break;
+                }
+
+        resp.setCharacterEncoding("UTF-8");
+        resp.setContentType("text/html; charset=UTF-8");
+
+        PrintWriter out = resp.getWriter();
+
+        // html 페이지 만들기
+        out.write("<!DOCTYPE html>");
+        out.write("<html>");
+        out.write("<head>");
+        out.write("<meta charset=\"UTF-8\">");
+        out.write("<title>Insert title here</title>");
+        out.write("<style>");
+        out.write("input{");
+        out.write("width:50px;");
+        out.write("height:50px;");
+        out.write("}");
+        out.write(".result{");
+        out.write("width:50px;");
+        out.write("height:50px;");
+        out.write("background : #9e9e9e;");
+        out.write("text-align : right;");
+        out.write("padding-right : 5px;");
+        out.write("}");
+        out.write("</style>");
+        out.write("</head>");
+        out.write("<body>");
+        out.write("<div>");
+        out.write("<form action=\"calc3\" method = \"post\">");
+        out.write("<table>");
+        out.write("<tr>");
+        out.printf("			<td class=\"result\" colspan=\"4\">%s</td>",exp);
+        out.write("	</tr>");
+        out.write("	<tr>");
+        out.write("		<td><input type=\"submit\" value=\"CE\" name=\"operator\"></td>");
+        out.write("		<td><input type=\"submit\" value=\"C\" name=\"operator\"></td>");
+        out.write("		<td><input type=\"submit\" value=\"BS\" name=\"operator\"></td>");
+        out.write("		<td><input type=\"submit\" value=\"/\" name=\"operator\"></td>");
+        out.write("	</tr>");
+        out.write("	<tr>");
+        out.write("		<td><input type=\"submit\" value=\"7\" name=\"value\"></td>");
+        out.write("		<td><input type=\"submit\" value=\"8\" name=\"value\"></td>");
+        out.write("		<td><input type=\"submit\" value=\"9\" name=\"value\"></td>");
+        out.write("		<td><input type=\"submit\" value=\"*\" name=\"operator\"></td>");
+        out.write("	</tr>");
+        out.write("	<tr>");
+        out.write("		<td><input type=\"submit\" value=\"4\" name=\"value\"></td>");
+        out.write("		<td><input type=\"submit\" value=\"5\" name=\"value\"></td>");
+        out.write("		<td><input type=\"submit\" value=\"6\" name=\"value\"></td>");
+        out.write("		<td><input type=\"submit\" value=\"-\" name=\"operator\"></td>");
+        out.write("	</tr>");
+        out.write("	<tr>");
+        out.write("		<td><input type=\"submit\" value=\"1\" name=\"value\"></td>");
+        out.write("		<td><input type=\"submit\" value=\"2\" name=\"value\"></td>");
+        out.write("		<td><input type=\"submit\" value=\"3\" name=\"value\"></td>");
+        out.write("		<td><input type=\"submit\" value=\"+\" name=\"operator\"></td>");
+        out.write("	</tr>");
+        out.write("	<tr>");
+        out.write("		<td></td>");
+        out.write("		<td><input type=\"submit\" value=\"0\" name=\"value\"></td>");
+        out.write("		<td><input type=\"submit\" value=\".\" name=\"dot\"></td>");
+        out.write("		<td><input type=\"submit\" value=\"=\" name=\"operator\"></td>");
+        out.write("	</tr>");
+        out.write("</table>");
+
+        out.write("		</form>");
+        out.write("	</div>");
+        out.write("</body>");
+        out.write("</html>");
+
+    }
+}
+```
+
+* __코드(servlet / 입력값 저장 or 계산해서 결과 전송해주는 역할)__
+```java
+@WebServlet("/calc3")
+public class Calc3 extends HttpServlet {
+	@Override
+	protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException{
+		
+		Cookie[] cookies = req.getCookies();
+		
+		String value = req.getParameter("value");
+		String operator = req.getParameter("operator");
+		String dot = req.getParameter("dot");
+		
+		String exp = "";
+        //쿠키가 있었던 경우 전달 받아 거기서 부터 시작
+		if(cookies != null)
+			for(Cookie cookie : cookies) 
+				if("exp".equals(cookie.getName())) {
+					exp = cookie.getValue();
+					break;
+				}
+		// 사용자가 = 입력시 최종 계산
+        if (operator != null && operator.equals("=")) {
+            ScriptEngine engine = new ScriptEngineManager().getEngineByName("graal.js");
+            try {
+                exp = String.valueOf(engine.eval(exp)); // 이때까지 쿠키에 저장했던 숫자, 연산자 문자열을 그대로 수행해주는 eval 메서드 호출
+            } catch (ScriptException e) {
+                e.printStackTrace();
+                exp = "Error"; // 에러 발생 시 "Error" 표시
+            }
+        }
+        // 초기화
+        else if (operator != null && operator.equals("C")) {
+			exp = "";
+		} 
+        // 숫자, 소수점, = 를 제외한 다른 연산자 있는 경우 exp에 그대로 붙임.
+        else {
+			exp += (value==null)?"":value;
+			exp += (operator==null)?"":operator;
+			exp += (dot==null)?"":dot;
+		}
+		
+		Cookie expCookie = new Cookie("exp", exp);
+        // 초기화 했을 경우 쿠키에 아무것도 남지 않도록 처리
+		if (operator != null && operator.equals("C")) {
+			expCookie.setMaxAge(0);
+		}
+        // 현재 servlet에서 처리한 후의 exp 값을 쿠키로 넘기기.
+		resp.addCookie(expCookie);
+		resp.sendRedirect("/calcpage"); // 클라이언트에게 특정 페이지로 전환하라는 redirection 명령
+	}
+}
+```
+
+* __실행결과__    
+
+<img src="./images/CalcPage_result.png">
