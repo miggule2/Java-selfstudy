@@ -1047,3 +1047,430 @@ public class Calc3 extends HttpServlet {
 * __실행결과__    
 
 <img src="./images/CalcPage_result.png">
+
+### 쿠키 삭제하기
+* 위에 보이는 계산기 기능 중에 "C"를 입력했을 시, 초기화 되는 기능을 구현하기 위해 쿠키값을 삭제하는 코드가 필요하다.
+```java
+// 이때까지의 쿠키값을 빈 문자열로 바꾸기
+else if (operator != null && operator.equals("C")) {
+    exp = "";
+}
+
+...
+
+/// 쿠키값 자체를 삭제(중요)
+if (operator != null && operator.equals("C")) {
+    expCookie.setMaxAge(0);
+}
+```
+
+### GET과 POST에 특화된 서비스 함수
+```
+                            -----> doGet(...)
+요청 ----> service(...)  --- 
+                            -----> doPost(...)
+```
+#### 클라이언트가 요청 시 일어나는 과정
+1. ```HttpServlet``` 객체의 ```service()```가 호출
+2. ```service()```는 요청 메서드에 따라 ```doGet()``` 또는 ```doPost()```를 호출
+3. 서블릿에서 ```service()```를 오버라이딩하면 해당 메서드가 실행되고, 그렇지 않으면 ```doGet()``` 또는 ```doPost()```가 실행
+4. 서블릿은 클라이언트 요청을 처리하고 필요한 자료를 응답으로 전송.
+
+#### 위를 이용해서 계산기를 하나의 servlet으로 처리
+* 우리가 이때까지 만들었던 계산기는 __get 요청을 처리하는__ ```CalcPage.java``` / __post 요청을 처리하는__ ```Calc3.java```로 나눠져 있었음.
+* 하지만 새로 배운 위의 함수 들을 통해 하나로 합칠 수 있게 됨.
+   
+
+* __코드__
+```java
+@WebServlet("/calculator")
+public class Calculator extends HttpServlet{
+    
+    // get 요청 시 호출되는 doGet 메서드
+	@Override
+	protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException{
+		Cookie[] cookies = req.getCookies();
+		String exp = "0";
+		if(cookies != null)
+			for(Cookie cookie : cookies) 
+				if("exp".equals(cookie.getName())) {
+					exp = cookie.getValue();
+					break;
+				}
+		
+		resp.setCharacterEncoding("UTF-8");
+		resp.setContentType("text/html; charset=UTF-8");
+		
+		PrintWriter out = resp.getWriter();
+		
+		out.write("<!DOCTYPE html>");
+		out.write("<html>");
+		out.write("<head>");
+		out.write("<meta charset=\"UTF-8\">");
+		out.write("<title>Insert title here</title>");
+		out.write("<style>");
+		out.write("input{");
+		out.write("width:50px;");
+		out.write("height:50px;");
+		out.write("}");
+		out.write(".result{");
+		out.write("width:50px;");
+		out.write("height:50px;");
+		out.write("background : #9e9e9e;");
+		out.write("text-align : right;");
+		out.write("padding-right : 5px;");
+		out.write("}");
+		out.write("</style>");
+		out.write("</head>");
+		out.write("<body>");
+		out.write("<div>");
+		out.write("<form action=\"calc3\" method = \"post\">");
+		out.write("<table>");
+		out.write("<tr>");
+		out.printf("			<td class=\"result\" colspan=\"4\">%s</td>",exp);
+		out.write("	</tr>");
+		out.write("	<tr>");
+		out.write("		<td><input type=\"submit\" value=\"CE\" name=\"operator\"></td>");
+		out.write("		<td><input type=\"submit\" value=\"C\" name=\"operator\"></td>");
+		out.write("		<td><input type=\"submit\" value=\"BS\" name=\"operator\"></td>");
+		out.write("		<td><input type=\"submit\" value=\"/\" name=\"operator\"></td>");
+		out.write("	</tr>");
+		out.write("	<tr>");
+		out.write("		<td><input type=\"submit\" value=\"7\" name=\"value\"></td>");
+		out.write("		<td><input type=\"submit\" value=\"8\" name=\"value\"></td>");
+		out.write("		<td><input type=\"submit\" value=\"9\" name=\"value\"></td>");
+		out.write("		<td><input type=\"submit\" value=\"*\" name=\"operator\"></td>");
+		out.write("	</tr>");
+		out.write("	<tr>");
+		out.write("		<td><input type=\"submit\" value=\"4\" name=\"value\"></td>");
+		out.write("		<td><input type=\"submit\" value=\"5\" name=\"value\"></td>");
+		out.write("		<td><input type=\"submit\" value=\"6\" name=\"value\"></td>");
+		out.write("		<td><input type=\"submit\" value=\"-\" name=\"operator\"></td>");
+		out.write("	</tr>");
+		out.write("	<tr>");
+		out.write("		<td><input type=\"submit\" value=\"1\" name=\"value\"></td>");
+		out.write("		<td><input type=\"submit\" value=\"2\" name=\"value\"></td>");
+		out.write("		<td><input type=\"submit\" value=\"3\" name=\"value\"></td>");
+		out.write("		<td><input type=\"submit\" value=\"+\" name=\"operator\"></td>");
+		out.write("	</tr>");
+		out.write("	<tr>");
+		out.write("		<td></td>");
+		out.write("		<td><input type=\"submit\" value=\"0\" name=\"value\"></td>");
+		out.write("		<td><input type=\"submit\" value=\".\" name=\"dot\"></td>");
+		out.write("		<td><input type=\"submit\" value=\"=\" name=\"operator\"></td>");
+		out.write("	</tr>");
+		out.write("</table>");
+					
+		out.write("		</form>");
+		out.write("	</div>");
+		out.write("</body>");
+		out.write("</html>");
+
+	}
+	
+    // post요청 시 호출되는 doPost 메서드
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException{
+
+        Cookie[] cookies = req.getCookies();
+
+        String value = req.getParameter("value");
+        String operator = req.getParameter("operator");
+        String dot = req.getParameter("dot");
+
+        String exp = "";
+        //쿠키가 있었던 경우 전달 받아 거기서 부터 시작
+        if(cookies != null)
+            for(Cookie cookie : cookies)
+                if("exp".equals(cookie.getName())) {
+                    exp = cookie.getValue();
+                    break;
+                }
+        // 사용자가 = 입력시 최종 계산
+        if (operator != null && operator.equals("=")) {
+            ScriptEngine engine = new ScriptEngineManager().getEngineByName("graal.js");
+            try {
+                exp = String.valueOf(engine.eval(exp)); // 이때까지 쿠키에 저장했던 숫자, 연산자 문자열을 그대로 수행해주는 eval 메서드 호출
+            } catch (ScriptException e) {
+                e.printStackTrace();
+                exp = "Error"; // 에러 발생 시 "Error" 표시
+            }
+        }
+        // 초기화
+        else if (operator != null && operator.equals("C")) {
+            exp = "";
+        }
+        // 숫자, 소수점, = 를 제외한 다른 연산자 있는 경우 exp에 그대로 붙임.
+        else {
+            exp += (value==null)?"":value;
+            exp += (operator==null)?"":operator;
+            exp += (dot==null)?"":dot;
+        }
+
+        Cookie expCookie = new Cookie("exp", exp);
+        // 초기화 했을 경우 쿠키에 아무것도 남지 않도록 처리
+        if (operator != null && operator.equals("C")) {
+            expCookie.setMaxAge(0);
+        }
+        // 현재 servlet에서 처리한 후의 exp 값을 쿠키로 넘기기.
+        resp.addCookie(expCookie);
+        expCookie.setPath("/calculator"); // 이제 쿠키를 모든 url에 전송할 필요가 없어짐.
+        resp.sendRedirect("/calcpage"); // 클라이언트에게 특정 페이지로 전환하라는 redirection 명령
+    }
+}
+```
+* 이미 두 servlet은 get 요청, post 요청만 따로따로 처리하고 있었기에 하나로 합쳐 함수 이름만 변경해주면 됨.
+* __또한 이제 하나의 url로 표현 가능하기 때문에 쿠키 path를 자기 자신으로 하면 모든 url에 쿠키를 보낼 필요도 없어짐.__
+
+## 10. JSP 시작하기
+### JSP의 필요성 (추후에 더 자세한 설명 배울 듯)
+* 우리가 이때까지 작성했던 __servlet 코드로 만든 동적 웹페이지__ 는 코드가 너무 복잡해지는 단점이 존재.
+* 하지만 ```JSP``` 로 코드를 작성하면 ```Jasper```가 서블릿 출력 코드를 만들어줘 보다 편리하게 동적인 웹 페이지를 만들 수 있다.
+
+### JSP 작동 원리
+* JSP는 클라이언트가 jsp 파일을 최초 요청할 때마다 Servlet 파일을 생성하여 요청을 처리.    
+
+<img src="https://img-svr.elancer.co.kr/storage/app/blog/content/202411/19181522v8MvK.jpg">
+
+1. 클라이언트가 hello.jsp 최초 요청.
+2. JSP 컨테이너가 JSP 파일 읽음. 
+3. JSP 컨테이너가 Servlet(.java) 파일 생성.
+4. .java -> .class 로 컴파일
+5. html 파일을 생성하여 JSP 컨테이너에게 전달.
+6. 클라이언트에게 html 파일 전달.
+
+* __이후 요청__ : 해당 .jsp 파일에 대한 후속 요청이 들어오면, WAS는 __이미 생성되어 컴파일된 .class 파일 (Servlet 객체)__ 을 실행하여 동적인 웹 페이지를 생성하고 응답.
+
+### 실습(html과의 차이)
+* 동일한 코드를 .html 과 .jsp 파일로 했을 때의 결과
+    
+ 
+* __코드__
+```html
+...
+<body>
+	<div>
+		<form action="calc3" method = "post">
+			<table>
+				<tr>
+					<td class="result" colspan="4">${3+4}</td>
+				</tr>
+				<tr>
+					<td><input type="submit" value="CE" name="operator"></td>
+					<td><input type="submit" value="C" name="operator"></td>
+					<td><input type="submit" value="BS" name="operator"></td>
+					<td><input type="submit" value="/" name="operator"></td>
+				</tr>
+				<tr>
+					<td><input type="submit" value="7" name="value"></td>
+					<td><input type="submit" value="8" name="value"></td>
+					<td><input type="submit" value="9" name="value"></td>
+					<td><input type="submit" value="*" name="operator"></td>
+				</tr>
+				<tr>
+					<td><input type="submit" value="4" name="value"></td>
+					<td><input type="submit" value="5" name="value"></td>
+					<td><input type="submit" value="6" name="value"></td>
+					<td><input type="submit" value="-" name="operator"></td>
+				</tr>
+				<tr>
+					<td><input type="submit" value="1" name="value"></td>
+					<td><input type="submit" value="2" name="value"></td>
+					<td><input type="submit" value="3" name="value"></td>
+					<td><input type="submit" value="+" name="operator"></td>
+				</tr>
+				<tr>
+					<td></td>
+					<td><input type="submit" value="0" name="value"></td>
+					<td><input type="submit" value="." name="dot"></td>
+					<td><input type="submit" value="=" name="operator"></td>
+				</tr>
+			</table>
+			
+		</form>
+	</div>
+</body>
+```
+
+* __html 코드__  
+<img src="./images/html_calc_result.png">
+   
+ 
+* __jsp__   
+<img src="./images/jsp_calc_result.png">
+
+### JSP의 코드 블록
+* jsp 를 Servlet 으로 변환될 때 생성되는 ```x_jsp.java``` 로 설명
+#### 1. 출력 코드
+* __x.jsp__
+```
+환영합니다
+```
+
+* __x_jsp.java__
+```java
+public final class x_jsp extends org.apache.jasper.runtime.HttpJspBase implements org.apache.jasper.runtime.JspSourceDependent{
+    // 멤버함수
+    // 멤버변수
+    public void _jspServie(final javax.servlet.http.HttpServletRequest, ... ) throws java.io.IOException, javax.servlet.ServletException{
+        // 지역변수
+        out.write("환영합니다"); 
+    }
+    
+}
+```
+
+#### 2. 코드블럭
+* __x.jsp__
+```
+<%
+    y = x+3;
+%>
+```
+
+* __x_jsp.java__
+```java
+public final class x_jsp extends org.apache.jasper.runtime.HttpJspBase implements org.apache.jasper.runtime.JspSourceDependent{
+    // 멤버함수
+    // 멤버변수
+    public void _jspServie(final javax.servlet.http.HttpServletRequest, ... ) throws java.io.IOException, javax.servlet.ServletException{
+        // 지역변수
+        y = x + 3;
+    }
+    
+}
+```
+
+#### 3. 코드블럭
+* __x.jsp__
+```
+y의 값은 : <%= y %>
+```
+
+* __x_jsp.java__
+```java
+public final class x_jsp extends org.apache.jasper.runtime.HttpJspBase implements org.apache.jasper.runtime.JspSourceDependent{
+    // 멤버함수
+    // 멤버변수
+    public void _jspServie(final javax.servlet.http.HttpServletRequest, ... ) throws java.io.IOException, javax.servlet.ServletException{
+        // 지역변수
+        out.write("y의 값은 :"); 
+        out.print(y);
+    }
+    
+}
+```
+
+#### 4. 선언부
+* 그냥 코드 블록으로 선언 시에 service 함수 안으로 들어가 오류 발생
+* 그래서 ```!```를 붙여 클래스 멤버 함수로 추가되도록 해야 함.
+    
+ 
+
+* __x.jsp__
+```java
+<% !
+    public int sum(int a, int b)
+    {
+        return a+b;
+    }
+%>
+```
+
+* __x_jsp.java__
+```java
+public final class x_jsp extends org.apache.jasper.runtime.HttpJspBase implements org.apache.jasper.runtime.JspSourceDependent{
+    // 멤버함수
+    // 멤버변수
+    public int sum(int a, int b)
+    {
+        return a+b;
+    }
+    
+    public void _jspServie(final javax.servlet.http.HttpServletRequest, ... ) throws java.io.IOException, javax.servlet.ServletException{
+        // 지역변수
+    }
+    
+}
+```
+
+#### 5. 초기 설정을 위한 Page 지시자
+* 어떠한 것이 출력되기 전에 미리 선언되어야 하는 특수한 명령이기 때문에 ```@```를 붙여 미리 선언을 해줌.    
+ 
+
+* __x.jsp__
+```java
+<%@ page language="java" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8 %>
+```
+
+### JSP의 내장 객체
+* __JSP에서 Servlet으로 변환되어 컴파일되는 과정에서 ```_jspService()```에 자동으로 선언되는 객체__
+* 우리가 별도로 선언할 필요 없는 __기본적인 요청과 응답, 출력등에 필수적인 역할__ 을 하는 객체.
+
+#### 내장 객체의 특징
+* 컨테이너가 미리 선언해놓은 참조변수를 이용해 사용.
+* JSP 문서 안의 ```<% 코드 블록 %>``` 와 ```<%= 표현식 %>```에서만 사용 가능.
+* ```<%! 선언부 %>```에서는 즉시 사용하는 건 불가능. 매개변수로 전달 받아서 사용 가능.
+
+#### 내장 객체의 종류
+<img src="./images/jsp_implicitObject.png">
+[출처](https://goldenrabbit.co.kr/2024/04/08/jsp-%EB%82%B4%EC%9E%A5-%EA%B0%9D%EC%B2%B4implicit-object%EB%9E%80/)
+
+### JSP 간단 예제
+* Servlet을 jsp를 사용한 코드로 변환
+   
+ 
+* __Servlet 코드__
+```java
+@WebServlet("/hi")
+public class Nana extends HttpServlet{
+	@Override
+	protected void service(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {
+		// TODO Auto-generated method stub
+		resp.setCharacterEncoding("UTF-8");
+		resp.setContentType("text/html; charset=UTF-8");
+		
+		PrintWriter out = resp.getWriter();
+		
+		String cnt_ = req.getParameter("cnt");
+		int cnt = 100;
+		if(cnt_ != null && !cnt_.equals("")) {
+			cnt = Integer.parseInt(cnt_);
+		}
+		
+		for(int i = 0; i < cnt; i++) {
+			out.println((i+1) + ": 안녕 Servlet!<br >");
+		}
+	}
+}
+```   
+ 
+* __jsp__
+```html
+// 지시자
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+
+// 쿼리를 통해 cnt를 입력 받는 코드(자바 코드기에 코드 블럭 안에 삽입)
+// resp ~ 부분은 이미 지시자에서 설정했기 때문에 중복할 필요 없음.
+<%
+String cnt_ = request.getParameter("cnt");
+int cnt = 100;
+if(cnt_ != null && !cnt_.equals("")) {
+	cnt = Integer.parseInt(cnt_);
+}
+%>
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+<% for(int i = 0; i < cnt; i++) {%>   // 반복을 위한 for 문을 코드 블록 안에 넣기
+	<%=i+1 %>: 안녕 Servlet!<br >
+	<%}%>                             // 코드의 끝을 알려주는 코드 블록
+</body>
+</html>
+```
