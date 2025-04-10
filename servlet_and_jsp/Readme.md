@@ -1474,3 +1474,194 @@ if(cnt_ != null && !cnt_.equals("")) {
 </body>
 </html>
 ```
+
+### JSP 코드 작성 시 문제점
+* 입력받은 숫자에 따라 홀수, 짝수를 출력하는 페이지를 JSP로 만들어보자.
+    
+ 
+* __코드__
+```html
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%
+	int num = 0;
+	String numString = request.getParameter("n");
+	if(numString != null && numString != ""){
+		num = Integer.parseInt(numString);
+	}
+%>
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Insert title here</title>
+</head>
+<body>
+	<%if(num % 2 != 0){ %>
+	홀수입니다.
+	<%} else { %>
+	짝수입니다.
+	<%} %>
+</body>
+</html>
+```
+* 이렇게 코드가 작성되는데, 이는 사람마다 작성할 때 차이가 날 가능성이 큼.
+* 그리고 기능에 따른 위치에 코드가 있는 게 아니기 때문에 유지보수에 있어서도 불편함.
+
+### JSP MVC model1
+* 위의 문제를 해결하기 위해 ```MVC model1``` 방식에 따라 코드를 작성해보자.
+```html
+/* -------------------------- 입력 및 제어 코드 ---------------------------- */
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+<%
+	int num = 0;
+	String numString = request.getParameter("n");
+	if(numString != null && numString != ""){
+		num = Integer.parseInt(numString);
+	}                                                                  
+
+    String result;
+    if(num%2 != 0) 
+        result = "홀수";
+    else
+        result = "짝수";
+%>
+/* --------------------------출력 코드-----------------------------------*/
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">                                                
+<title>Insert title here</title>
+</head>
+<body>
+    <%=result%>입니다.
+</body>
+</html>
+```
+
+* 위와 같이 
+  * __입력과 제어를 담당하는 ```Controller(자바 코드)```__ 
+  * __출력을 담당하는 ```View(html)```__ 
+  * __둘을 연결하는 출력 데이터(Model)__ 
+* 나누어 코드를 작성하면 더 이상적인 코드를 작성 가능.
+
+#### model1 구조
+* view와 logic을 JSP 페이지 하나에서 처리하는 구조
+
+#### mdeel1의 장단점
+1. 장점
+   * 구조가 단순하여 직관적으로 개발 가능.
+2. 단점
+   * view 코드와 로직처리를 위한 java 코드가 혼재되어 있어 코드가 복잡해짐.
+   * Front-End와 Back-End가 섞여있어 분업하기 까다로움.
+
+### JSP MVC model2
+#### model2 구조
+* model1과 달리 __view와 controller가 물리적으로 분리된 구조__
+* 좀 더 상세하게
+  1. __웹 브라우저의 요청을 ```Servlet(controller)```이 받고__
+  2. __```Model```에서 로직을 처리하여__
+  3. __```forwarding```을 통해 controller -> view로 데이터 이동__
+  4__출력은 ```JSP(view)```에서 처리한다.__
+
+#### mdeel2의 장단점
+1. 장점
+   * __view와 logic, controller가 분리되어 있어 유지 보수에 있어 유리.__
+2. 단점
+    * 구조설계를 위한 개발 시간,비용 추가
+
+#### model2 실습
+* __controller(model과 혼재)__
+* 간단한 예시를 위해 Model 로직이 Controller에 포함되어 있지만, 실제 model2 에서는 별도의 model 클래스로 분리됨
+```java
+@WebServlet("/spag")
+public class Spag extends HttpServlet{
+    @Override
+    protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+        int num = 0;
+        String numString = request.getParameter("n");
+        if(numString != null && numString != ""){
+            num = Integer.parseInt(numString);
+        }
+
+        String result;
+        if(num%2 != 0)
+            result = "홀수";
+        else
+            result = "짝수";
+        
+        // 데이터 전송(저장)을 위한 request 객체
+        request.setAttribute("result", result);
+
+        //forward 
+        RequestDispatcher dispatcher = request.getRequestDispatcher("spag.jsp"); // spag.jsp로 전달하는 역할을 하는 RequestDispatcher 객체를 불러옴.
+        dispatcher.forward(request, response); // 현재 요청(request), 응답(response) 객체를 spag.jsp로 전달. 이때 request 객체에 저장된 속성도 함께 전달되어 spag.jsp에서 접근 가능
+    }
+}
+```
+
+* __view(jsp)__
+```html
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">                                                
+<title>Insert title here</title>
+</head>
+<body>
+    <%=request.getAttribute("result") %>입니다.
+</body>
+</html>
+```
+
+#### forward(간단 설명)
+* __서블릿이나 jsp 페이지가 처리해야할 요청을 다른 웹 컴포넌트에게 넘겨서 처리하도록 하는 방식__
+* __```HttpServletRequest``` 객체의 속성(attribute)__ 이 유지되고,
+* 브라우저에서 ```spag?n=4```를 요청하여 서버 내부적으로 ```Spag.java(Servlet)```이 ```spag.jsp```로 포워딩하더라도, __주소창엔 여전히 ```spag?n=4```라고 표시. 즉, spag.jsp의 내용을 보지만 url은 유지됨.__
+
+### View를 위한 데이터 추출 표현식 EL(Expression Language
+* 우리가 저장 객체에서 값을 추출해서 출력하기 위해선 
+```html
+<%=request.getAttribute("result") %>
+```
+* 다음과 같은 코드블럭을 사용해야 하지만    
+ 
+
+* __EL__ 을 사용하면
+```html
+${result}
+```
+* 와 같이 아주 간단하게 표현할 수 있다.
+
+#### 복잡한 객체를 전달 받는 경우 1
+* Controller
+```java
+String[] names = {"hello1","hello2"}; // 배열 전달
+request.setAttribute("names",names);
+```
+* View
+```html
+<%=((String[])(request.getAttribute("names")))[0] %>
+
+${names[0]} // EL 사용
+```
+
+#### 복잡한 객체를 전달 받는 경우 2
+* Controller
+```java
+Map<String, Object> map = new HashMap<String,Object>();
+map.put("one", 1);
+map.put("two", "hello");
+request.setAttribute("map", map);
+```
+* View
+```html
+<%=((Map)request.getAttribute("map")).get("one") %>
+
+${map.one} // EL 사용
+```
