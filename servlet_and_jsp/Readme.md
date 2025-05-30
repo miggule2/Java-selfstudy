@@ -1624,7 +1624,7 @@ public class Spag extends HttpServlet{
 * __```HttpServletRequest``` 객체의 속성(attribute)__ 이 유지되고,
 * 브라우저에서 ```spag?n=4```를 요청하여 서버 내부적으로 ```Spag.java(Servlet)```이 ```spag.jsp```로 포워딩하더라도, __주소창엔 여전히 ```spag?n=4```라고 표시. 즉, spag.jsp의 내용을 보지만 url은 유지됨.__
 
-### View를 위한 데이터 추출 표현식 EL(Expression Language
+### View를 위한 데이터 추출 표현식 EL(Expression Language)
 * 우리가 저장 객체에서 값을 추출해서 출력하기 위해선 
 ```html
 <%=request.getAttribute("result") %>
@@ -1664,4 +1664,117 @@ request.setAttribute("map", map);
 <%=((Map)request.getAttribute("map")).get("one") %>
 
 ${map.one} // EL 사용
+```
+
+### EL의 데이터 저장소
+#### 저장 객체에서 값을 추출하는 순서
+* 서버상에 존재하는 저장 객체 ```page```, ```request```, ```session```, ```application```에서 EL을 사용해서 데이터를 추출할 때, 순서가 존재.
+* 예를 들어, ```${cnt}``` 처럼 cnt 값을 들고 오고 싶은데, 중복된 객체에 값이 저장된 경우는 어떻게 할까?
+* __오류가 발생하는 것이 아닌 ```page```->```request```->```session```->```application```순으로 돌아가며 값을 찾고, 먼저 발견된 경우 그 객체에서 값을 꺼냄__
+
+#### EL 데이터 추출 예시
+```
+<%
+pageContext.setAttribute("result", "hello");
+%>
+...
+${result}
+```
+* 이런식으로 ```page 객체```에 ```result```에 대응하는 ```hello```를 넣고
+* 이전 코드에선 ```request 객체```에 ```result```에 대응하는 ```짝수 또는 홀수``` 를 넣었을 때
+```
+hello
+```
+* 결론은 앞서 설명한 대로 page 객체에서 result에 대응하는 값을 먼저 찾았기 때문에 탐색을 그만 두고 ```hello```를 출력.
+
+#### 특정 객체에서만 저장된 값을 찾고 싶을 경우
+* 찾고싶은 값 앞에 ```pageScope```,```requestScope```,```sessionScope```,```applicationScope``` 같은 한정사를 넣어 
+* ```requestScope.result```같은 식으로 사용 가능
+
+#### 파라미터, 헤더 정보 같은 정보들의 EL 사용
+* ```파라미터```, ```헤더정보```, ```쿠키``` 등과 같은 HTTP 요청과 관련된 정보도 EL을 이용해서 추출 및 출력할 수 있음.
+* 사용법은 위와 비슷하게, ```param.cnt```, ```header.host``` 등과 같이 사용할 수 있음.
+
+#### pageContext에 대응하는 EL 사용법
+* 원래 EL에서는 객체의 함수 호출과 같은 기능을 지원하지 않지만, ```pageContext```의 경우에 __특별히 getter 메서드를 지원__ 한다.
+    
+ 
+* 예를들어
+```
+<%= pageContext.getRequest().getMethod() %>
+```
+* 와 같이 표현해야 할 것을 EL을 사용하면
+```html
+${pageContext.request.method}
+```
+* 이런 식으로 편리하게 EL을 사용할 수 있음.
+
+#### EL 데이터 추출에 대한 간단 실습
+* __Controller 코드__
+```java
+...
+String numString = request.getParameter("n"); // 파라미터 저장
+if(numString != null && numString != ""){
+    num = Integer.parseInt(numString);
+}                                                                  
+
+String result;
+if(num%2 != 0) 
+    result = "홀수";
+else
+    result = "짝수";
+
+request.setAttribute("result", result); // request 객체에 "result"에 대응하는 result 값 저장.
+
+String[] names = {"hello1","hello2"};
+request.setAttribute("names", names); // request 객체에 "namse"에 대응하는 names 배열 저장.
+
+Map<String, Object> map = new HashMap<String,Object>();
+map.put("one", 1);
+map.put("two", "hello");
+request.setAttribute("map", map);  // reqeust 객체에 "map"에 대응하는 map 맵 저장.
+
+//forward
+//dispatcher를 통해 데이터(result)를 view 딴으로 보내기
+RequestDispatcher dispatcher = request.getRequestDispatcher("spag.jsp"); // 
+dispatcher.forward(request, response);
+...
+```
+
+* __JSP 코드__
+```html
+<%@ page language="java" contentType="text/html; charset=UTF-8"
+    pageEncoding="UTF-8"%>
+
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">                                                
+<title>Insert title here</title>
+</head>
+// pageContext에 "result"에 대응하는 "hello" 값 저장
+<%
+pageContext.setAttribute("result", "hello");
+%>
+<body>
+    <%=request.getAttribute("result") %>입니다.
+    
+    ${names[0]}<br > // request에 저장된 names 배열[0] 출력
+    ${map.one}<br > // request에 저장된 map.get(one) 출력
+    ${result}<br >  // page에 저장된 result 값 출력
+    ${requestScope.result}<br > // request 객체에 저장된 result 값만 찾아 출력.
+    ${param.n }<br >  // 파라미터 n 값을 출력
+    ${header.host }<br > // 헤더 정보의 host 값을 출력
+</body>
+</html>
+```
+
+* __결과 (url:http://localhost:8080/spag?n=3)__
+```java
+홀수입니다. hello1
+1
+hello
+홀수
+3
+localhost:8080
 ```
